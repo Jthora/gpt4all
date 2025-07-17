@@ -21,8 +21,8 @@
 #include <QTextFrame> // IWYU pragma: keep
 #include <QTextFrameFormat> // IWYU pragma: keep
 #include <QTextTableCell>
-#include <QtAssert>
-#include <QtLogging>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
 
 #include <algorithm>
 #include <utility>
@@ -1071,9 +1071,13 @@ void replaceAndInsertMarkdown(int startIndex, int endIndex, QTextDocument *doc)
     QTextDocumentFragment fragment(cursor);
     const QString plainText = fragment.toPlainText();
     cursor.removeSelectedText();
+    
+    // Qt 6.2 compatibility: insertMarkdown is not available, use insertHtml as workaround
+    QTextDocument tempDoc;
     QTextDocument::MarkdownFeatures features = static_cast<QTextDocument::MarkdownFeatures>(
         QTextDocument::MarkdownNoHTML | QTextDocument::MarkdownDialectGitHub);
-    cursor.insertMarkdown(plainText, features);
+    tempDoc.setMarkdown(plainText, features);
+    cursor.insertHtml(tempDoc.toHtml());
     cursor.block().setUserState(Markdown);
 }
 

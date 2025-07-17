@@ -1,7 +1,7 @@
 #include "tool.h"
 
 #include <QDataStream>
-#include <QtTypes>
+#include <QtGlobal>
 
 #include <string>
 
@@ -15,14 +15,13 @@ json::object_t Tool::jinjaValue() const
     for (auto &info : p) {
         std::string typeStr;
         switch (info.type) {
-        using enum ToolEnums::ParamType;
-        case String:   typeStr = "string"; break;
-        case Number:   typeStr = "number"; break;
-        case Integer:  typeStr = "integer"; break;
-        case Object:   typeStr = "object"; break;
-        case Array:    typeStr = "array"; break;
-        case Boolean:  typeStr = "boolean"; break;
-        case Null:     typeStr = "null"; break;
+        case ToolEnums::ParamType::String:   typeStr = "string"; break;
+        case ToolEnums::ParamType::Number:   typeStr = "number"; break;
+        case ToolEnums::ParamType::Integer:  typeStr = "integer"; break;
+        case ToolEnums::ParamType::Object:   typeStr = "object"; break;
+        case ToolEnums::ParamType::Array:    typeStr = "array"; break;
+        case ToolEnums::ParamType::Boolean:  typeStr = "boolean"; break;
+        case ToolEnums::ParamType::Null:     typeStr = "null"; break;
         }
         paramList.emplace_back(json::initializer_list_t {
             { "name",        info.name.toStdString()        },

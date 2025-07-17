@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QString>
-#include <QtTypes>
+#include <QtGlobal> // Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 
 class LLM : public QObject

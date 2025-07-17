@@ -3,7 +3,7 @@
 #include <QDebug>
 #include <QMap>
 #include <QTextStream>
-#include <QtLogging>
+#include <QLoggingCategory>
 
 #include <exception>
 
@@ -53,14 +53,13 @@ void ChatItem::serializeSubItems(QDataStream &stream, int version)
 {
     stream << name;
     switch (auto typ = type()) {
-        using enum ChatItem::Type;
-        case Response:      { serializeResponse(stream, version);       break; }
-        case ToolCall:      { serializeToolCall(stream, version);       break; }
-        case ToolResponse:  { serializeToolResponse(stream, version);   break; }
-        case Text:          { serializeText(stream, version);           break; }
-        case Think:         { serializeThink(stream, version);          break; }
-        case System:
-        case Prompt:
+        case ChatItem::Type::Response:      { serializeResponse(stream, version);       break; }
+        case ChatItem::Type::ToolCall:      { serializeToolCall(stream, version);       break; }
+        case ChatItem::Type::ToolResponse:  { serializeToolResponse(stream, version);   break; }
+        case ChatItem::Type::Text:          { serializeText(stream, version);           break; }
+        case ChatItem::Type::Think:         { serializeThink(stream, version);          break; }
+        case ChatItem::Type::System:
+        case ChatItem::Type::Prompt:
             throw std::invalid_argument(fmt::format("cannot serialize subitem type {}", int(typ)));
     }
 
@@ -188,14 +187,13 @@ bool ChatItem::deserializeSubItems(QDataStream &stream, int version)
         return false;
     }
     switch (auto typ = type()) {
-        using enum ChatItem::Type;
-        case Response:      { deserializeResponse(stream, version); break; }
-        case ToolCall:      { deserializeToolCall(stream, version); break; }
-        case ToolResponse:  { deserializeToolResponse(stream, version); break; }
-        case Text:          { deserializeText(stream, version); break; }
-        case Think:         { deserializeThink(stream, version); break; }
-        case System:
-        case Prompt:
+        case ChatItem::Type::Response:      { deserializeResponse(stream, version); break; }
+        case ChatItem::Type::ToolCall:      { deserializeToolCall(stream, version); break; }
+        case ChatItem::Type::ToolResponse:  { deserializeToolResponse(stream, version); break; }
+        case ChatItem::Type::Text:          { deserializeText(stream, version); break; }
+        case ChatItem::Type::Think:         { deserializeThink(stream, version); break; }
+        case ChatItem::Type::System:
+        case ChatItem::Type::Prompt:
             throw std::invalid_argument(fmt::format("cannot serialize subitem type {}", int(typ)));
     }
 

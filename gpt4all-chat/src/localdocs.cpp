@@ -11,7 +11,7 @@
 #include <QList>
 #include <QUrl>
 #include <Qt>
-#include <QtLogging>
+#include <QLoggingCategory>
 
 
 class MyLocalDocs: public LocalDocs { };

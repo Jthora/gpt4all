@@ -16,7 +16,7 @@ Item {
     }
 
     property ListModel tabTitlesModel: ListModel { }
-    property list<Component> tabs: [ ]
+    property var tabs: []
 
     TabBar {
         id: settingsTabBar

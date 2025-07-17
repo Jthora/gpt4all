@@ -10,18 +10,18 @@
 #include <QChar>
 #include <QDateTime>
 #include <QDebug>
-#include <QLatin1StringView>
+#include <QLatin1String>
 #include <QList>
 #include <QRegularExpression>
 #include <QString>
 #include <QStringList> // IWYU pragma: keep
 #include <QStringView>
 #include <QVariant>
-#include <QtLogging>
+#include <QLoggingCategory>
 
 #include <memory>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 
 static QString formatCellText(const QXlsx::Cell *cell)
@@ -54,20 +54,20 @@ static QString formatCellText(const QXlsx::Cell *cell)
         ),
         QRegularExpression::MultilineOption
     );
-    cellText.replace(special, uR"(\1\\2)"_s);
-    cellText.replace(u'&', "&amp;"_L1);
-    cellText.replace(u'<', "&lt;"_L1);
-    cellText.replace(u'>', "&gt;"_L1);
+    cellText.replace(special, QString(R"(\1\\2)"));
+    cellText.replace(u'&', QString("&amp;"));
+    cellText.replace(u'<', QString("&lt;"));
+    cellText.replace(u'>', QString("&gt;"));
 
     // Apply Markdown formatting based on font styles
     if (format.fontUnderline())
-        cellText = u"_%1_"_s.arg(cellText);
+        cellText = QString("_%1_").arg(cellText);
     if (format.fontBold())
-        cellText = u"**%1**"_s.arg(cellText);
+        cellText = QString("**%1**").arg(cellText);
     if (format.fontItalic())
-        cellText = u"*%1*"_s.arg(cellText);
+        cellText = QString("*%1*").arg(cellText);
     if (format.fontStrikeOut())
-        cellText = u"~~%1~~"_s.arg(cellText);
+        cellText = QString("~~%1~~").arg(cellText);
 
     return cellText;
 }
@@ -125,7 +125,7 @@ QString XLSXToMD::toMarkdown(QIODevice *xlsxDevice)
             continue;
         }
 
-        markdown += u"### %1\n\n"_s.arg(sheetName);
+        markdown += QString("### %1\n\n").arg(sheetName);
 
         // Determine the used range
         QXlsx::CellRange range = sheet->dimension();
@@ -140,7 +140,7 @@ QString XLSXToMD::toMarkdown(QIODevice *xlsxDevice)
             continue;
         }
 
-        auto appendRow = [&markdown](auto &list) { markdown += u"|%1|\n"_s.arg(list.join(u'|')); };
+        auto appendRow = [&markdown](auto &list) { markdown += QString("|%1|\n").arg(list.join(u'|')); };
 
         // Empty header
         static QString header(u' ');
@@ -159,7 +159,7 @@ QString XLSXToMD::toMarkdown(QIODevice *xlsxDevice)
             QStringList rowData;
             for (int col = firstCol; col <= lastCol; ++col) {
                 QString cellText = getCellValue(sheet, row, col);
-                rowData << (cellText.isEmpty() ? u" "_s : cellText);
+                rowData << (cellText.isEmpty() ? QString(" ") : cellText);
             }
             appendRow(rowData);
         }

@@ -18,9 +18,9 @@
 #include <QVariant>
 #include <QVector> // IWYU pragma: keep
 #include <Qt>
-#include <QtAssert>
-#include <QtLogging>
-#include <QtPreprocessorSupport>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory> // Qt 6.2 compatibility (QtLogging header doesn't exist)
+#include <QtGlobal> // Qt 6.2 compatibility
 
 #include <memory>
 

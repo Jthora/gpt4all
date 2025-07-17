@@ -28,7 +28,7 @@
 #include <variant>
 #include <vector>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals not available
 
 class ChatLLM;
 class QDataStream;
@@ -132,7 +132,7 @@ private Q_SLOTS:
     void handleTimeout()
     {
         m_elapsed += m_time.restart();
-        emit report(u"%1 tokens/sec"_s.arg(m_tokens / float(m_elapsed / 1000.0f), 0, 'g', 2));
+        emit report(QString("%1 tokens/sec").arg(m_tokens / float(m_elapsed / 1000.0f), 0, 'g', 2));
     }
 
 private:
@@ -186,14 +186,14 @@ public:
     {
         if (!isModelLoaded()) return QString();
         const char *name = m_llModelInfo.model->gpuDeviceName();
-        return name ? QString(name) : u"CPU"_s;
+        return name ? QString(name) : QString("CPU");
     }
 
     // not loaded -> QString(), no fallback -> QString("")
     QString fallbackReason() const
     {
         if (!isModelLoaded()) return QString();
-        return m_llModelInfo.fallbackReason.value_or(u""_s);
+        return m_llModelInfo.fallbackReason.value_or(QString(""));
     }
 
     bool serialize(QDataStream &stream, int version);

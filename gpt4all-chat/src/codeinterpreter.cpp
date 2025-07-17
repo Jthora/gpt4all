@@ -8,8 +8,6 @@
 #include <QVariant>
 #include <Qt>
 
-using namespace Qt::Literals::StringLiterals;
-
 
 CodeInterpreter::CodeInterpreter()
     : Tool()
@@ -105,7 +103,7 @@ CodeInterpreterWorker::CodeInterpreterWorker()
     m_engine->globalObject().setProperty("console_internal", consoleInternalObject);
 
     // preprocess console.log args in JS since Q_INVOKE doesn't support varargs
-    auto consoleObject = m_engine->evaluate(uR"(
+    auto consoleObject = m_engine->evaluate(QString(R"(
         class Console {
             log(...args) {
                 if (args.length == 0)
@@ -121,7 +119,7 @@ CodeInterpreterWorker::CodeInterpreterWorker()
         }
 
         new Console();
-    )"_s);
+    )"));
     m_engine->globalObject().setProperty("console", consoleObject);
     m_thread.start();
 }

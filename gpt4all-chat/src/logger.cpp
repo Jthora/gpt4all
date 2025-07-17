@@ -12,7 +12,7 @@
 #include <iostream>
 #include <string>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 
 class MyLogger: public Logger { };
@@ -66,7 +66,7 @@ void Logger::messageHandler(QtMsgType type, const QMessageLogContext &, const QS
     // Get time and date
     auto timestamp = QDateTime::currentDateTime().toString();
 
-    const std::string out = u"[%1] (%2): %3\n"_s.arg(typeString, timestamp, msg).toStdString();
+    const std::string out = QString("[%1] (%2): %3\n").arg(typeString, timestamp, msg).toStdString();
 
     // Write message
     QMutexLocker locker(&logger->m_mutex);

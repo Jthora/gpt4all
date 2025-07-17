@@ -4,7 +4,7 @@
 #include <QFile>
 #include <QMutex>
 #include <QString>
-#include <QtLogging>
+#include <QLoggingCategory> // Qt 6.2 compatibility (QtLogging header doesn't exist)
 
 
 class Logger {

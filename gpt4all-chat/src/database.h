@@ -19,7 +19,7 @@
 #include <QThread>
 #include <QUrl>
 #include <QVector> // IWYU pragma: keep
-#include <QtAssert>
+#include <QDebug> // QtAssert equivalent for Qt 6.2
 
 #include <atomic>
 #include <cstddef>
@@ -30,7 +30,7 @@
 #include <utility>
 #include <vector> // IWYU pragma: keep
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals not available
 
 class Database;
 class DocumentReader;
@@ -69,8 +69,8 @@ struct DocumentInfo
 
     key_type key() const { return {folder, file.canonicalFilePath()}; } // for comparison
 
-    bool isPdf () const { return !file.suffix().compare("pdf"_L1,  Qt::CaseInsensitive); }
-    bool isDocx() const { return !file.suffix().compare("docx"_L1, Qt::CaseInsensitive); }
+    bool isPdf () const { return !file.suffix().compare(QLatin1String("pdf"),  Qt::CaseInsensitive); }
+    bool isDocx() const { return !file.suffix().compare(QLatin1String("docx"), Qt::CaseInsensitive); }
 };
 
 struct ResultInfo {
@@ -101,7 +101,7 @@ public:
 
     QString fileUri() const {
         // QUrl reserved chars that are not UNSAFE_PATH according to glib/gconvert.c
-        static const QByteArray s_exclude = "!$&'()*+,/:=@~"_ba;
+        static const QByteArray s_exclude = QByteArray("!$&'()*+,/:=@~");
 
         Q_ASSERT(!QFileInfo(path).isRelative());
 #ifdef Q_OS_WINDOWS
@@ -111,7 +111,7 @@ public:
         auto escaped = QString::fromUtf8(QUrl::toPercentEncoding(path, s_exclude));
         if (escaped.front() != '/')
             escaped = '/' + escaped;
-        return u"file://"_s + escaped;
+        return QString("file://") + escaped;
     }
 
     bool operator==(const ResultInfo &other) const {

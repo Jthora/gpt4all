@@ -9,7 +9,7 @@
 #include <QList>
 #include <QString>
 #include <QVariant>
-#include <QtPreprocessorSupport>
+#include <QtGlobal> // Qt 6.2 compatibility
 
 
 class ToolModel : public QAbstractListModel

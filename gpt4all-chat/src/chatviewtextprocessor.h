@@ -8,7 +8,7 @@
 #include <QString>
 #include <QSyntaxHighlighter>
 #include <QVector> // IWYU pragma: keep
-#include <QtTypes>
+#include <QtGlobal> // Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 // IWYU pragma: no_forward_declare QQuickTextDocument
 

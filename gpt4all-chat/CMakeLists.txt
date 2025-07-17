@@ -93,7 +93,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
-set(GPT4ALL_QT_COMPONENTS Core HttpServer LinguistTools Quick QuickDialogs2 Sql Svg)
+set(GPT4ALL_QT_COMPONENTS Core Quick QuickDialogs2 Sql Svg)
 set(GPT4ALL_USING_QTPDF OFF)
 if (CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|AARCH64|arm64|ARM64)$")
     # QtPDF is not available.
@@ -101,10 +101,12 @@ if (CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarc
         message(FATAL_ERROR "QtPDF is not available on Windows ARM64.")
     endif()
 elseif (GPT4ALL_USE_QTPDF MATCHES "^(ON|AUTO)$")
-    set(GPT4ALL_USING_QTPDF ON)
-    list(APPEND GPT4ALL_QT_COMPONENTS Pdf)
+    # Disable QtPdf for now on ARM64 Ubuntu
+    message(STATUS "QtPDF disabled for ARM64 compatibility")
+    #set(GPT4ALL_USING_QTPDF ON)
+    #list(APPEND GPT4ALL_QT_COMPONENTS Pdf)
 endif()
-find_package(Qt6 6.8 COMPONENTS ${GPT4ALL_QT_COMPONENTS} REQUIRED)
+find_package(Qt6 6.2 COMPONENTS ${GPT4ALL_QT_COMPONENTS} REQUIRED)
 
 if (QT_KNOWN_POLICY_QTP0004)
     qt_policy(SET QTP0004 NEW)  # generate extra qmldir files on Qt 6.8+
@@ -378,16 +380,17 @@ qt_add_qml_module(chat
       icons/you.svg
 )
 
-qt_add_translations(chat
-    TS_FILES
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_en_US.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_es_MX.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_zh_CN.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_zh_TW.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_ro_RO.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_it_IT.ts
-    ${CMAKE_SOURCE_DIR}/translations/gpt4all_pt_BR.ts
-)
+# Temporarily disable translations for ARM64 build
+# qt_add_translations(chat
+#     TS_FILES
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_en_US.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_es_MX.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_zh_CN.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_zh_TW.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_ro_RO.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_it_IT.ts
+#     ${CMAKE_SOURCE_DIR}/translations/gpt4all_pt_BR.ts
+# )
 
 set_target_properties(chat PROPERTIES
     WIN32_EXECUTABLE TRUE
@@ -447,13 +450,17 @@ target_include_directories(chat PRIVATE deps/usearch/include
                                         deps/usearch/fp16/include)
 
 target_link_libraries(chat
-    PRIVATE Qt6::Core Qt6::HttpServer Qt6::Quick Qt6::Sql Qt6::Svg)
+    PRIVATE Qt6::Core Qt6::Quick Qt6::Sql Qt6::Svg)
 if (GPT4ALL_USING_QTPDF)
     target_compile_definitions(chat PRIVATE GPT4ALL_USE_QTPDF)
     target_link_libraries(chat PRIVATE Qt6::Pdf)
-else()
-    # Link PDFium
+elseif (DEFINED GPT4ALL_PDFIUM_AVAILABLE AND GPT4ALL_PDFIUM_AVAILABLE)
+    # Link PDFium only if available
     target_link_libraries(chat PRIVATE pdfium)
+else()
+    # No PDF support available
+    target_compile_definitions(chat PRIVATE GPT4ALL_NO_PDF_SUPPORT)
+    message(STATUS "Building without PDF support - PDFium not available for this platform")
 endif()
 target_link_libraries(chat
     PRIVATE llmodel SingleApplication fmt::fmt duckx::duckx QXlsx)

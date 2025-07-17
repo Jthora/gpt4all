@@ -41,11 +41,10 @@ json::object_t JinjaMessage::AsJson() const
     {
         json::string_t role;
         switch (m_item->type()) {
-            using enum MessageItem::Type;
-            case System:       role = "system";    break;
-            case Prompt:       role = "user";      break;
-            case Response:     role = "assistant"; break;
-            case ToolResponse: role = "tool";      break;
+            case MessageItem::Type::System:       role = "system";    break;
+            case MessageItem::Type::Prompt:       role = "user";      break;
+            case MessageItem::Type::Response:     role = "assistant"; break;
+            case MessageItem::Type::ToolResponse: role = "tool";      break;
         }
         obj.emplace_back("role", std::move(role));
     }

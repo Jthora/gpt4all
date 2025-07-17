@@ -16,7 +16,7 @@
 #include <QStringList> // IWYU pragma: keep
 #include <QUrl>
 #include <QVariant>
-#include <QtTypes>
+#include <QtGlobal> // Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 // IWYU pragma: no_forward_declare LocalDocsCollectionsModel
 // IWYU pragma: no_forward_declare ToolCallInfo

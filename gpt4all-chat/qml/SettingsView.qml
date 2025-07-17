@@ -135,22 +135,31 @@ Rectangle {
                 anchors.right: parent.right
                 currentIndex: listView.currentIndex
 
-                MySettingsStack {
-                    tabs: [
-                        Component { ApplicationSettings { } }
-                    ]
+                Component {
+                    id: applicationSettingsComponent
+                    ApplicationSettings { }
+                }
+
+                Component {
+                    id: modelSettingsComponent
+                    ModelSettings { }
+                }
+
+                Component {
+                    id: localDocsSettingsComponent
+                    LocalDocsSettings { }
                 }
 
                 MySettingsStack {
-                    tabs: [
-                        Component { ModelSettings { } }
-                    ]
+                    tabs: [applicationSettingsComponent]
                 }
 
                 MySettingsStack {
-                    tabs: [
-                        Component { LocalDocsSettings { } }
-                    ]
+                    tabs: [modelSettingsComponent]
+                }
+
+                MySettingsStack {
+                    tabs: [localDocsSettingsComponent]
                 }
             }
         }

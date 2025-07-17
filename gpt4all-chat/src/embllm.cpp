@@ -19,19 +19,19 @@
 #include <QNetworkRequest>
 #include <QUrl>
 #include <Qt>
-#include <QtAssert>
-#include <QtLogging>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
 
 #include <exception>
 #include <string>
 #include <utility>
 #include <vector>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 
-static const QString EMBEDDING_MODEL_NAME = u"nomic-embed-text-v1.5"_s;
-static const QString LOCAL_EMBEDDING_MODEL = u"nomic-embed-text-v1.5.f16.gguf"_s;
+static const QString EMBEDDING_MODEL_NAME = QString("nomic-embed-text-v1.5");
+static const QString LOCAL_EMBEDDING_MODEL = QString("nomic-embed-text-v1.5.f16.gguf");
 
 EmbeddingLLMWorker::EmbeddingLLMWorker()
     : QObject(nullptr)
@@ -77,9 +77,9 @@ bool EmbeddingLLMWorker::loadModel()
     }
 
 #ifdef Q_OS_DARWIN
-    static const QString embPathFmt = u"%1/../Resources/%2"_s;
+    static const QString embPathFmt = QString("%1/../Resources/%2");
 #else
-    static const QString embPathFmt = u"%1/../resources/%2"_s;
+    static const QString embPathFmt = QString("%1/../resources/%2");
 #endif
 
     QString filePath = embPathFmt.arg(QCoreApplication::applicationDirPath(), LOCAL_EMBEDDING_MODEL);
@@ -216,7 +216,7 @@ void EmbeddingLLMWorker::sendAtlasRequest(const QStringList &texts, const QStrin
     QJsonDocument doc(root);
 
     QUrl nomicUrl("https://api-atlas.nomic.ai/v1/embedding/text");
-    const QString authorization = u"Bearer %1"_s.arg(m_nomicAPIKey).trimmed();
+    const QString authorization = QString("Bearer %1").arg(m_nomicAPIKey).trimmed();
     QNetworkRequest request(nomicUrl);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("Authorization", authorization.toUtf8());
@@ -370,11 +370,11 @@ void EmbeddingLLMWorker::handleFinished()
         QString errorDetails;
         QString replyErrorString = reply->errorString().trimmed();
         QByteArray replyContent = reply->readAll().trimmed();
-        errorDetails = u"ERROR: Nomic Atlas responded with error code \"%1\""_s.arg(code);
+        errorDetails = QString("ERROR: Nomic Atlas responded with error code \"%1\"").arg(code);
         if (!replyErrorString.isEmpty())
-            errorDetails += u". Error Details: \"%1\""_s.arg(replyErrorString);
+            errorDetails += QString(". Error Details: \"%1\"").arg(replyErrorString);
         if (!replyContent.isEmpty())
-            errorDetails += u". Response Content: \"%1\""_s.arg(QString::fromUtf8(replyContent));
+            errorDetails += QString(". Response Content: \"%1\"").arg(QString::fromUtf8(replyContent));
         qWarning() << errorDetails;
         emit errorGenerated(chunks, errorDetails);
         return;

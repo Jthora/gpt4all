@@ -36,9 +36,9 @@
 #include <QVariant>
 #include <QWaitCondition>
 #include <Qt>
-#include <QtAssert>
-#include <QtLogging>
-#include <QtTypes> // IWYU pragma: keep
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
+#include <QtGlobal> // IWYU pragma: keep
 
 #include <algorithm>
 #include <chrono>
@@ -62,7 +62,6 @@
 #include <utility>
 #include <vector>
 
-using namespace Qt::Literals::StringLiterals;
 using namespace ToolEnums;
 namespace ranges = std::ranges;
 using json = nlohmann::ordered_json;
@@ -313,7 +312,7 @@ bool ChatLLM::loadDefaultModel()
 {
     ModelInfo defaultModel = ModelList::globalInstance()->defaultModelInfo();
     if (defaultModel.filename().isEmpty()) {
-        emit modelLoadingError(u"Could not find any model to load"_s);
+        emit modelLoadingError(QString("Could not find any model to load"));
         return false;
     }
     return loadModel(defaultModel);
@@ -417,7 +416,7 @@ bool ChatLLM::loadModel(const ModelInfo &modelInfo)
             setModelInfo(modelInfo);
             Q_ASSERT(!m_modelInfo.filename().isEmpty());
             if (m_modelInfo.filename().isEmpty())
-                emit modelLoadingError(u"Modelinfo is left null for %1"_s.arg(modelInfo.filename()));
+                emit modelLoadingError(QString("Modelinfo is left null for %1").arg(modelInfo.filename()));
             return true;
         } else {
             // Release the memory since we have to switch to a different model.
@@ -489,7 +488,7 @@ bool ChatLLM::loadModel(const ModelInfo &modelInfo)
         if (!m_isServer)
             LLModelStore::globalInstance()->releaseModel(std::move(m_llModelInfo)); // release back into the store
         resetModel();
-        emit modelLoadingError(u"Could not find file for model %1"_s.arg(modelInfo.filename()));
+        emit modelLoadingError(QString("Could not find file for model %1").arg(modelInfo.filename()));
     }
 
     if (m_llModelInfo.model)
@@ -546,7 +545,7 @@ bool ChatLLM::loadNewModel(const ModelInfo &modelInfo, QVariantMap &modelLoadPro
             if (!m_isServer)
                 LLModelStore::globalInstance()->releaseModel(std::move(m_llModelInfo));
             resetModel();
-            emit modelLoadingError(u"Error loading %1: %2"_s.arg(modelInfo.filename(), constructError));
+            emit modelLoadingError(QString("Error loading %1: %2").arg(modelInfo.filename(), constructError));
             return false;
         }
 
@@ -566,7 +565,7 @@ bool ChatLLM::loadNewModel(const ModelInfo &modelInfo, QVariantMap &modelLoadPro
         auto fname = modelInfo.filename();
         if (!warned.contains(fname)) {
             emit modelLoadingWarning(
-                u"%1 is known to be broken. Please get a replacement via the download dialog."_s.arg(fname)
+                QString("%1 is known to be broken. Please get a replacement via the download dialog.").arg(fname)
             );
             warned.insert(fname); // don't warn again until restart
         }
@@ -669,7 +668,7 @@ bool ChatLLM::loadNewModel(const ModelInfo &modelInfo, QVariantMap &modelLoadPro
         if (!m_isServer)
             LLModelStore::globalInstance()->releaseModel(std::move(m_llModelInfo));
         resetModel();
-        emit modelLoadingError(u"Could not load model due to invalid model file for %1"_s.arg(modelInfo.filename()));
+        emit modelLoadingError(QString("Could not load model due to invalid model file for %1").arg(modelInfo.filename()));
         modelLoadProps.insert("error", "loadmodel_failed");
         return true;
     }
@@ -682,7 +681,7 @@ bool ChatLLM::loadNewModel(const ModelInfo &modelInfo, QVariantMap &modelLoadPro
             if (!m_isServer)
                 LLModelStore::globalInstance()->releaseModel(std::move(m_llModelInfo));
             resetModel();
-            emit modelLoadingError(u"Could not determine model type for %1"_s.arg(modelInfo.filename()));
+            emit modelLoadingError(QString("Could not determine model type for %1").arg(modelInfo.filename()));
         }
     }
 
@@ -782,7 +781,7 @@ void ChatLLM::prompt(const QStringList &enabledCollections)
         promptInternalChat(enabledCollections, promptContextFromSettings(m_modelInfo));
     } catch (const std::exception &e) {
         // FIXME(jared): this is neither translated nor serialized
-        m_chatModel->setResponseValue(u"Error: %1"_s.arg(QString::fromUtf8(e.what())));
+        m_chatModel->setResponseValue(QString("Error: %1").arg(QString::fromUtf8(e.what())));
         m_chatModel->setError();
         emit responseStopped(0);
     }
@@ -813,8 +812,8 @@ std::vector<MessageItem> ChatLLM::forkConversation(const QString &prompt) const
 static uint parseJinjaTemplateVersion(QStringView tmpl)
 {
     static uint MAX_VERSION = 1;
-    static QRegularExpression reVersion(uR"(\A{#-?\s+gpt4all v(\d+)-?#}\s*$)"_s, QRegularExpression::MultilineOption);
-    if (auto match = reVersion.matchView(tmpl); match.hasMatch()) {
+    static QRegularExpression reVersion(QString(R"(\A{#-?\s+gpt4all v(\d+)-?#}\s*$)"), QRegularExpression::MultilineOption);
+    if (auto match = reVersion.match(tmpl.toString()); match.hasMatch()) {
         uint ver = match.captured(1).toUInt();
         if (ver > MAX_VERSION)
             throw std::out_of_range(fmt::format("Unknown template version: {}", ver));
@@ -1275,7 +1274,7 @@ public:
 protected:
     bool onSimpleResponse(const QString &response) override
     {
-        auto responseUtf8Bytes = response.toUtf8().slice(m_offset);
+        auto responseUtf8Bytes = response.toUtf8().sliced(m_offset);
         auto responseUtf8 = std::string(responseUtf8Bytes.begin(), responseUtf8Bytes.end());
         // extract all questions from response
         ptrdiff_t lastMatchEnd = -1;

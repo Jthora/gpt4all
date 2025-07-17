@@ -28,14 +28,14 @@
 #include <QVariant>
 #include <QWindow>
 #include <Qt>
-#include <QtAssert>
-#include <QtSystemDetection>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QtGlobal> // Qt 6.2 compatibility (QtSystemDetection included in QtGlobal)
 
 #if G4A_CONFIG(force_d3d12)
 #   include <QSGRendererInterface>
 #endif
 
-#ifndef GPT4ALL_USE_QTPDF
+#if !defined(GPT4ALL_USE_QTPDF) && !defined(GPT4ALL_NO_PDF_SUPPORT)
 #   include <fpdfview.h>
 #endif
 
@@ -48,8 +48,6 @@
 #else
 #   include <signal.h>
 #endif
-
-using namespace Qt::Literals::StringLiterals;
 
 
 static void raiseWindow(QWindow *window)
@@ -72,7 +70,7 @@ static void raiseWindow(QWindow *window)
 
 int main(int argc, char *argv[])
 {
-#ifndef GPT4ALL_USE_QTPDF
+#if !defined(GPT4ALL_USE_QTPDF) && !defined(GPT4ALL_NO_PDF_SUPPORT)
     FPDF_InitLibrary();
 #endif
 
@@ -106,10 +104,10 @@ int main(int argc, char *argv[])
         auto appDirPath = QCoreApplication::applicationDirPath();
         QStringList searchPaths {
 #ifdef Q_OS_DARWIN
-            u"%1/../Frameworks"_s.arg(appDirPath),
+            QString("%1/../Frameworks").arg(appDirPath),
 #else
             appDirPath,
-            u"%1/../lib"_s.arg(appDirPath),
+            QString("%1/../lib").arg(appDirPath),
 #endif
         };
         LLModel::Implementation::setImplementationsSearchPath(searchPaths.join(u';').toStdString());
@@ -147,7 +145,7 @@ int main(int argc, char *argv[])
         engine.rootContext()->setContextProperty("fixedFont", fixedFont);
     }
 
-    const QUrl url(u"qrc:/gpt4all/main.qml"_s);
+    const QUrl url(QString("qrc:/gpt4all/main.qml"));
 
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
         &app, [url](QObject *obj, const QUrl &objUrl) {
@@ -187,7 +185,7 @@ int main(int argc, char *argv[])
     // Otherwise, we can get a heap-use-after-free inside of llama.cpp.
     ChatListModel::globalInstance()->destroyChats();
 
-#ifndef GPT4ALL_USE_QTPDF
+#if !defined(GPT4ALL_USE_QTPDF) && !defined(GPT4ALL_NO_PDF_SUPPORT)
     FPDF_DestroyLibrary();
 #endif
 

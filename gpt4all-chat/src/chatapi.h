@@ -7,7 +7,7 @@
 #include <QNetworkReply>
 #include <QObject>
 #include <QString>
-#include <QtPreprocessorSupport>
+#include <QtGlobal> // Qt 6.2 compatibility
 
 #include <cstddef>
 #include <cstdint>

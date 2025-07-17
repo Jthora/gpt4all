@@ -35,9 +35,9 @@
 #include <QTextStream>
 #include <QTimer>
 #include <QUrl>
-#include <QtAssert>
-#include <QtLogging>
-#include <QtPreprocessorSupport>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
+#include <QtGlobal> // Qt 6.2 compatibility
 
 #include <algorithm>
 #include <iterator>
@@ -45,16 +45,16 @@
 #include <string>
 #include <utility>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 //#define USE_LOCAL_MODELSJSON
 
 #define MODELS_JSON_VERSION "3"
 
 
-static const QStringList FILENAME_BLACKLIST { u"gpt4all-nomic-embed-text-v1.rmodel"_s };
+static const QStringList FILENAME_BLACKLIST { QString("gpt4all-nomic-embed-text-v1.rmodel") };
 
-static const QString RMODEL_CHAT_TEMPLATE = uR"(<chat>
+static const QString RMODEL_CHAT_TEMPLATE = QString(R"(<chat>
 {%- set loop_messages = messages %}
 {%- for message in loop_messages %}
     {%- if not message['role'] in ['user', 'assistant', 'system'] %}
@@ -77,7 +77,7 @@ static const QString RMODEL_CHAT_TEMPLATE = uR"(<chat>
     {{- message.content | escape }}
     {{- '</' + message['role'] + '>' }}
 {%- endfor %}
-</chat>)"_s;
+</chat>)");
 
 
 QString ModelInfo::id() const
@@ -426,33 +426,33 @@ bool ModelInfo::shouldSaveMetadata() const
     return installed && (isClone() || isDiscovered() || description() == "" /*indicates sideloaded*/);
 }
 
-QVariant ModelInfo::getField(QLatin1StringView name) const
+QVariant ModelInfo::getField(QLatin1String name) const
 {
-    static const std::unordered_map<QLatin1StringView, QVariant(*)(const ModelInfo &)> s_fields = {
-        { "filename"_L1,                [](auto &i) -> QVariant { return i.m_filename;                } },
-        { "description"_L1,             [](auto &i) -> QVariant { return i.m_description;             } },
-        { "url"_L1,                     [](auto &i) -> QVariant { return i.m_url;                     } },
-        { "quant"_L1,                   [](auto &i) -> QVariant { return i.m_quant;                   } },
-        { "type"_L1,                    [](auto &i) -> QVariant { return i.m_type;                    } },
-        { "isClone"_L1,                 [](auto &i) -> QVariant { return i.m_isClone;                 } },
-        { "isDiscovered"_L1,            [](auto &i) -> QVariant { return i.m_isDiscovered;            } },
-        { "likes"_L1,                   [](auto &i) -> QVariant { return i.m_likes;                   } },
-        { "downloads"_L1,               [](auto &i) -> QVariant { return i.m_downloads;               } },
-        { "recency"_L1,                 [](auto &i) -> QVariant { return i.m_recency;                 } },
-        { "temperature"_L1,             [](auto &i) -> QVariant { return i.m_temperature;             } },
-        { "topP"_L1,                    [](auto &i) -> QVariant { return i.m_topP;                    } },
-        { "minP"_L1,                    [](auto &i) -> QVariant { return i.m_minP;                    } },
-        { "topK"_L1,                    [](auto &i) -> QVariant { return i.m_topK;                    } },
-        { "maxLength"_L1,               [](auto &i) -> QVariant { return i.m_maxLength;               } },
-        { "promptBatchSize"_L1,         [](auto &i) -> QVariant { return i.m_promptBatchSize;         } },
-        { "contextLength"_L1,           [](auto &i) -> QVariant { return i.m_contextLength;           } },
-        { "gpuLayers"_L1,               [](auto &i) -> QVariant { return i.m_gpuLayers;               } },
-        { "repeatPenalty"_L1,           [](auto &i) -> QVariant { return i.m_repeatPenalty;           } },
-        { "repeatPenaltyTokens"_L1,     [](auto &i) -> QVariant { return i.m_repeatPenaltyTokens;     } },
-        { "chatTemplate"_L1,            [](auto &i) -> QVariant { return i.defaultChatTemplate();     } },
-        { "systemMessage"_L1,           [](auto &i) -> QVariant { return i.m_systemMessage;           } },
-        { "chatNamePrompt"_L1,          [](auto &i) -> QVariant { return i.m_chatNamePrompt;          } },
-        { "suggestedFollowUpPrompt"_L1, [](auto &i) -> QVariant { return i.m_suggestedFollowUpPrompt; } },
+    static const std::unordered_map<QLatin1String, QVariant(*)(const ModelInfo &)> s_fields = {
+        { QLatin1String("filename"),                [](auto &i) -> QVariant { return i.m_filename;                } },
+        { QLatin1String("description"),             [](auto &i) -> QVariant { return i.m_description;             } },
+        { QLatin1String("url"),                     [](auto &i) -> QVariant { return i.m_url;                     } },
+        { QLatin1String("quant"),                   [](auto &i) -> QVariant { return i.m_quant;                   } },
+        { QLatin1String("type"),                    [](auto &i) -> QVariant { return i.m_type;                    } },
+        { QLatin1String("isClone"),                 [](auto &i) -> QVariant { return i.m_isClone;                 } },
+        { QLatin1String("isDiscovered"),            [](auto &i) -> QVariant { return i.m_isDiscovered;            } },
+        { QLatin1String("likes"),                   [](auto &i) -> QVariant { return i.m_likes;                   } },
+        { QLatin1String("downloads"),               [](auto &i) -> QVariant { return i.m_downloads;               } },
+        { QLatin1String("recency"),                 [](auto &i) -> QVariant { return i.m_recency;                 } },
+        { QLatin1String("temperature"),             [](auto &i) -> QVariant { return i.m_temperature;             } },
+        { QLatin1String("topP"),                    [](auto &i) -> QVariant { return i.m_topP;                    } },
+        { QLatin1String("minP"),                    [](auto &i) -> QVariant { return i.m_minP;                    } },
+        { QLatin1String("topK"),                    [](auto &i) -> QVariant { return i.m_topK;                    } },
+        { QLatin1String("maxLength"),               [](auto &i) -> QVariant { return i.m_maxLength;               } },
+        { QLatin1String("promptBatchSize"),         [](auto &i) -> QVariant { return i.m_promptBatchSize;         } },
+        { QLatin1String("contextLength"),           [](auto &i) -> QVariant { return i.m_contextLength;           } },
+        { QLatin1String("gpuLayers"),               [](auto &i) -> QVariant { return i.m_gpuLayers;               } },
+        { QLatin1String("repeatPenalty"),           [](auto &i) -> QVariant { return i.m_repeatPenalty;           } },
+        { QLatin1String("repeatPenaltyTokens"),     [](auto &i) -> QVariant { return i.m_repeatPenaltyTokens;     } },
+        { QLatin1String("chatTemplate"),            [](auto &i) -> QVariant { return i.defaultChatTemplate();     } },
+        { QLatin1String("systemMessage"),           [](auto &i) -> QVariant { return i.m_systemMessage;           } },
+        { QLatin1String("chatNamePrompt"),          [](auto &i) -> QVariant { return i.m_chatNamePrompt;          } },
+        { QLatin1String("suggestedFollowUpPrompt"), [](auto &i) -> QVariant { return i.m_suggestedFollowUpPrompt; } },
     };
     return s_fields.at(name)(*this);
 }
@@ -623,7 +623,7 @@ QString ModelList::compatibleModelNameHash(QUrl baseUrl, QString modelName) {
 
 QString ModelList::compatibleModelFilename(QUrl baseUrl, QString modelName) {
     QString hash(compatibleModelNameHash(baseUrl, modelName));
-    return QString(u"gpt4all-%1-capi.rmodel"_s).arg(hash);
+    return QString(QString("gpt4all-%1-capi.rmodel")).arg(hash);
 }
 
 bool ModelList::eventFilter(QObject *obj, QEvent *ev)
@@ -1330,7 +1330,8 @@ void ModelList::updateOldRemoteModels(const QString &path)
 {
     QDirIterator it(path, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
-        QFileInfo info = it.nextFileInfo();
+        it.next();
+        QFileInfo info = it.fileInfo();
         QString filename = it.fileName();
         if (!filename.startsWith("chatgpt-") || !filename.endsWith(".txt"))
             continue;
@@ -1351,7 +1352,7 @@ void ModelList::updateOldRemoteModels(const QString &path)
             file.close();
         }
 
-        QFile newfile(u"%1/gpt4all-%2.rmodel"_s.arg(info.dir().path(), modelname));
+        QFile newfile(QString("%1/gpt4all-%2.rmodel").arg(info.dir().path(), modelname));
         if (!newfile.open(QIODevice::ReadWrite)) {
             qWarning().noquote() << tr("cannot create \"%1\": %2").arg(newfile.fileName(), file.errorString());
             continue;
@@ -1374,7 +1375,8 @@ void ModelList::processModelDirectory(const QString &path)
 {
     QDirIterator it(path, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
-        QFileInfo info = it.nextFileInfo();
+        it.next();
+        QFileInfo info = it.fileInfo();
 
         QString filename = it.fileName();
         if (filename.startsWith("incomplete") || FILENAME_BLACKLIST.contains(filename))
@@ -1473,7 +1475,7 @@ static std::optional<QFile> modelsJsonCacheFile()
     if (auto path = QStandardPaths::locate(loc, modelsJsonFname); !path.isEmpty())
         return std::make_optional<QFile>(path);
     if (auto path = QStandardPaths::writableLocation(loc); !path.isEmpty())
-        return std::make_optional<QFile>(u"%1/%2"_s.arg(path, modelsJsonFname));
+        return std::make_optional<QFile>(QString("%1/%2").arg(path, modelsJsonFname));
     return std::nullopt;
 }
 
@@ -1482,9 +1484,9 @@ void ModelList::updateModelsFromJson()
     QString modelsJsonFname = modelsJsonFilename();
 
 #if defined(USE_LOCAL_MODELSJSON)
-    QUrl jsonUrl(u"file://%1/dev/large_language_models/gpt4all/gpt4all-chat/metadata/%2"_s.arg(QDir::homePath(), modelsJsonFname));
+    QUrl jsonUrl(QString("file://%1/dev/large_language_models/gpt4all/gpt4all-chat/metadata/%2").arg(QDir::homePath(), modelsJsonFname));
 #else
-    QUrl jsonUrl(u"http://gpt4all.io/models/%1"_s.arg(modelsJsonFname));
+    QUrl jsonUrl(QString("http://gpt4all.io/models/%1").arg(modelsJsonFname));
 #endif
 
     QNetworkRequest request(jsonUrl);
@@ -1525,9 +1527,9 @@ void ModelList::updateModelsFromJsonAsync()
     QString modelsJsonFname = modelsJsonFilename();
 
 #if defined(USE_LOCAL_MODELSJSON)
-    QUrl jsonUrl(u"file://%1/dev/large_language_models/gpt4all/gpt4all-chat/metadata/%2"_s.arg(QDir::homePath(), modelsJsonFname));
+    QUrl jsonUrl(QString("file://%1/dev/large_language_models/gpt4all/gpt4all-chat/metadata/%2").arg(QDir::homePath(), modelsJsonFname));
 #else
-    QUrl jsonUrl(u"http://gpt4all.io/models/%1"_s.arg(modelsJsonFname));
+    QUrl jsonUrl(QString("http://gpt4all.io/models/%1").arg(modelsJsonFname));
 #endif
 
     QNetworkRequest request(jsonUrl);
@@ -1566,7 +1568,7 @@ void ModelList::handleModelsJsonDownloadErrorOccurred(QNetworkReply::NetworkErro
     if (!reply)
         return;
 
-    qWarning() << u"ERROR: Modellist download failed with error code \"%1-%2\""_s
+    qWarning() << QString("ERROR: Modellist download failed with error code \"%1-%2\"")
                       .arg(code).arg(reply->errorString());
 }
 
@@ -1606,7 +1608,7 @@ void ModelList::parseModelsJsonFile(const QByteArray &jsonData, bool save)
         auto cacheFile = modelsJsonCacheFile();
         if (!cacheFile) {
             // no known location
-        } else if (QFileInfo(*cacheFile).dir().mkpath(u"."_s) && cacheFile->open(QIODeviceBase::WriteOnly)) {
+        } else if (QFileInfo(*cacheFile).dir().mkpath(QString(".")) && cacheFile->open(QIODeviceBase::WriteOnly)) {
             cacheFile->write(jsonData);
             cacheFile->close();
         } else
@@ -1625,8 +1627,8 @@ void ModelList::parseModelsJsonFile(const QByteArray &jsonData, bool save)
         QString requiresVersion = obj["requires"].toString();
         QString versionRemoved = obj["removedIn"].toString();
         QString url = obj["url"].toString();
-        bool isDefault = obj.contains("isDefault") && obj["isDefault"] == u"true"_s;
-        bool disableGUI = obj.contains("disableGUI") && obj["disableGUI"] == u"true"_s;
+        bool isDefault = obj.contains("isDefault") && obj["isDefault"] == QString("true");
+        bool disableGUI = obj.contains("disableGUI") && obj["disableGUI"] == QString("true");
         QString description = obj["description"].toString();
         QString order = obj["order"].toString();
         int ramrequired = obj["ramrequired"].toString().toInt();
@@ -1637,7 +1639,7 @@ void ModelList::parseModelsJsonFile(const QByteArray &jsonData, bool save)
 
         QByteArray modelHash;
         ModelInfo::HashAlgorithm hashAlgorithm;
-        if (auto it = obj.find("sha256sum"_L1); it != obj.end()) {
+        if (auto it = obj.find(QLatin1String("sha256sum")); it != obj.end()) {
             modelHash = it->toString().toLatin1();
             hashAlgorithm = ModelInfo::Sha256;
         } else {
@@ -1706,9 +1708,9 @@ void ModelList::parseModelsJsonFile(const QByteArray &jsonData, bool save)
             data.append({ ModelList::RepeatPenaltyRole, obj["repeatPenalty"].toDouble() });
         if (obj.contains("repeatPenaltyTokens"))
             data.append({ ModelList::RepeatPenaltyTokensRole, obj["repeatPenaltyTokens"].toInt() });
-        if (auto it = obj.find("chatTemplate"_L1); it != obj.end())
+        if (auto it = obj.find(QLatin1String("chatTemplate")); it != obj.end())
             data.append({ ModelList::ChatTemplateRole, it->toString() });
-        if (auto it = obj.find("systemMessage"_L1); it != obj.end())
+        if (auto it = obj.find(QLatin1String("systemMessage")); it != obj.end())
             data.append({ ModelList::SystemMessageRole, it->toString() });
         updateData(id, data);
     }
@@ -1926,7 +1928,7 @@ void ModelList::updateModelsFromSettings()
         // The file could have been deleted manually by the user for instance or temporarily renamed.
         QString filename;
         {
-            auto value = settings.value(u"%1/filename"_s.arg(g));
+            auto value = settings.value(QString("%1/filename").arg(g));
             if (!value.isValid() || !modelExists(filename = value.toString()))
                 continue;
         }
@@ -2127,8 +2129,8 @@ void ModelList::discoverSearch(const QString &search)
 
     static const QRegularExpression wsRegex("\\s+");
     QStringList searchParams = search.split(wsRegex); // split by whitespace
-    QString searchString = u"search=%1&"_s.arg(searchParams.join('+'));
-    QString limitString = m_discoverLimit > 0 ? u"limit=%1&"_s.arg(m_discoverLimit) : QString();
+    QString searchString = QString("search=%1&").arg(searchParams.join('+'));
+    QString limitString = m_discoverLimit > 0 ? QString("limit=%1&").arg(m_discoverLimit) : QString();
 
     QString sortString;
     switch (m_discoverSort) {
@@ -2141,9 +2143,9 @@ void ModelList::discoverSearch(const QString &search)
         sortString = "sort=lastModified&"; break;
     }
 
-    QString directionString = !sortString.isEmpty() ? u"direction=%1&"_s.arg(m_discoverSortDirection) : QString();
+    QString directionString = !sortString.isEmpty() ? QString("direction=%1&").arg(m_discoverSortDirection) : QString();
 
-    QUrl hfUrl(u"https://huggingface.co/api/models?filter=gguf&%1%2%3%4full=true&config=true"_s
+    QUrl hfUrl(QString("https://huggingface.co/api/models?filter=gguf&%1%2%3%4full=true&config=true")
                .arg(searchString, limitString, sortString, directionString));
 
     QNetworkRequest request(hfUrl);
@@ -2170,8 +2172,8 @@ void ModelList::handleDiscoveryErrorOccurred(QNetworkReply::NetworkError code)
     QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
     if (!reply)
         return;
-    qWarning() << u"ERROR: Discovery failed with error code \"%1-%2\""_s
-                      .arg(code).arg(reply->errorString()).toStdString();
+    qWarning() << QString("ERROR: Discovery failed with error code \"%1-%2\"")
+                      .arg(code).arg(reply->errorString());
 }
 
 enum QuantType {
@@ -2250,7 +2252,7 @@ void ModelList::parseDiscoveryJsonFile(const QByteArray &jsonData)
         QString filename = file.second;
         ++m_discoverNumberOfResults;
 
-        QUrl url(u"https://huggingface.co/%1/resolve/main/%2"_s.arg(repo_id, filename));
+        QUrl url(QString("https://huggingface.co/%1/resolve/main/%2").arg(repo_id, filename));
         QNetworkRequest request(url);
         request.setRawHeader("Accept-Encoding", "identity");
         request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::ManualRedirectPolicy);
@@ -2354,8 +2356,8 @@ void ModelList::handleDiscoveryItemErrorOccurred(QNetworkReply::NetworkError cod
     if (!reply)
         return;
 
-    qWarning() << u"ERROR: Discovery item failed with error code \"%1-%2\""_s
-                      .arg(code).arg(reply->errorString()).toStdString();
+    qWarning() << QString("ERROR: Discovery item failed with error code \"%1-%2\"")
+                      .arg(code).arg(reply->errorString());
 }
 
 QStringList ModelList::remoteModelList(const QString &apiKey, const QUrl &baseUrl)

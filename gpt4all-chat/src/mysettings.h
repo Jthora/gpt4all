@@ -4,7 +4,7 @@
 #include "modellist.h" // IWYU pragma: keep
 
 #include <QDateTime>
-#include <QLatin1StringView> // IWYU pragma: keep
+#include <QLatin1String>
 #include <QList>
 #include <QModelIndex>
 #include <QObject>
@@ -265,23 +265,23 @@ private:
     QVariant getBasicSetting(const QString &name) const;
     void setBasicSetting(const QString &name, const QVariant &value, std::optional<QString> signal = std::nullopt);
     int getEnumSetting(const QString &setting, const QStringList &valueNames) const;
-    QVariant getModelSetting(QLatin1StringView name, const ModelInfo &info) const;
+    QVariant getModelSetting(QLatin1String name, const ModelInfo &info) const;
     QVariant getModelSetting(const char *name, const ModelInfo &info) const;
-    void setModelSetting(QLatin1StringView name, const ModelInfo &info, const QVariant &value, bool force,
+    void setModelSetting(QLatin1String name, const ModelInfo &info, const QVariant &value, bool force,
                          bool signal = false);
     void setModelSetting(const char *name, const ModelInfo &info, const QVariant &value, bool force,
                          bool signal = false);
     auto getUpgradeableModelSetting(
-        const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+        const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
     ) const -> UpgradeableSetting;
     bool isUpgradeableModelSettingSet(
-        const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+        const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
     ) const;
     bool setUpgradeableModelSetting(
-        const ModelInfo &info, const QString &value, QLatin1StringView legacyKey, QLatin1StringView newKey
+        const ModelInfo &info, const QString &value, QLatin1String legacyKey, QLatin1String newKey
     );
     bool resetUpgradeableModelSetting(
-        const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+        const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
     );
     QString filePathForLocale(const QLocale &locale);
 

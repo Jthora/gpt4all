@@ -28,9 +28,8 @@
 #include <QUrl>
 #include <QVariant>
 #include <Qt>
-#include <QtAssert>
-#include <QtPreprocessorSupport>
-#include <QtTypes>
+#include <QDebug> // Qt 6.2 compatibility (QtAssert added in 6.4)
+#include <QtGlobal> // Qt 6.2 compatibility (QtPreprocessorSupport added in 6.4, QtTypes included in QtGlobal)
 
 #include <algorithm>
 #include <iterator>
@@ -42,7 +41,7 @@
 #include <utility>
 #include <vector>
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals not available
 namespace ranges = std::ranges;
 namespace views  = std::views;
 
@@ -72,14 +71,14 @@ public:
         const QString localFilePath = url.toLocalFile();
         const QFileInfo info(localFilePath);
         if (info.suffix().toLower() != "xlsx")
-            return u"## Attached: %1\n\n%2"_s.arg(file(), content);
+            return QString("## Attached: %1\n\n%2").arg(file(), content);
 
         QBuffer buffer;
         buffer.setData(content);
         buffer.open(QIODevice::ReadOnly);
         const QString md = XLSXToMD::toMarkdown(&buffer);
         buffer.close();
-        return u"## Attached: %1\n\n%2"_s.arg(file(), md);
+        return QString("## Attached: %1\n\n%2").arg(file(), md);
     }
 
     bool operator==(const PromptAttachment &other) const { return url == other.url; }
@@ -139,14 +138,14 @@ public:
             throw std::logic_error("bakedPrompt() called on non-prompt item");
         QStringList parts;
         if (!m_sources.isEmpty()) {
-            parts << u"### Context:\n"_s;
+            parts << QString("### Context:\n");
             for (auto &source : std::as_const(m_sources))
-                parts << u"Collection: "_s << source.collection
-                      << u"\nPath: "_s     << source.path
-                      << u"\nExcerpt: "_s  << source.text << u"\n\n"_s;
+                parts << QString("Collection: ") << source.collection
+                      << QString("\nPath: ")     << source.path
+                      << QString("\nExcerpt: ")  << source.text << QString("\n\n");
         }
         for (auto &attached : std::as_const(m_promptAttachments))
-            parts << attached.processedContent() << u"\n\n"_s;
+            parts << attached.processedContent() << QString("\n\n");
         parts << m_content;
         return parts.join(QString());
     }
@@ -221,16 +220,16 @@ public:
     //       ChatLLM prepends a system MessageItem on-the-fly.
     ChatItem(QObject *parent, system_tag_t, const QString &value)
         : ChatItem(parent)
-    { this->name = u"System: "_s; this->value = value; }
+    { this->name = QString("System: "); this->value = value; }
 
     ChatItem(QObject *parent, prompt_tag_t, const QString &value, const QList<PromptAttachment> &attachments = {})
         : ChatItem(parent)
-    { this->name = u"Prompt: "_s; this->value = value; this->promptAttachments = attachments; }
+    { this->name = QString("Prompt: "); this->value = value; this->promptAttachments = attachments; }
 
 private:
     ChatItem(QObject *parent, response_tag_t, bool isCurrentResponse, const QString &value = {})
         : ChatItem(parent)
-    { this->name = u"Response: "_s; this->value = value; this->isCurrentResponse = isCurrentResponse; }
+    { this->name = QString("Response: "); this->value = value; this->isCurrentResponse = isCurrentResponse; }
 
 public:
     // A new response, to be filled in
@@ -243,35 +242,35 @@ public:
 
     ChatItem(QObject *parent, text_tag_t, const QString &value)
         : ChatItem(parent)
-    { this->name = u"Text: "_s; this->value = value; }
+    { this->name = QString("Text: "); this->value = value; }
 
     ChatItem(QObject *parent, tool_call_tag_t, const QString &value)
         : ChatItem(parent)
-    { this->name = u"ToolCall: "_s; this->value = value; }
+    { this->name = QString("ToolCall: "); this->value = value; }
 
     ChatItem(QObject *parent, tool_response_tag_t, const QString &value)
         : ChatItem(parent)
-    { this->name = u"ToolResponse: "_s; this->value = value; }
+    { this->name = QString("ToolResponse: "); this->value = value; }
 
     ChatItem(QObject *parent, think_tag_t, const QString &value)
         : ChatItem(parent)
-    { this->name = u"Think: "_s; this->value = value; }
+    { this->name = QString("Think: "); this->value = value; }
 
     Type type() const
     {
-        if (name == u"System: "_s)
+        if (name == QString("System: "))
             return Type::System;
-        if (name == u"Prompt: "_s)
+        if (name == QString("Prompt: "))
             return Type::Prompt;
-        if (name == u"Response: "_s)
+        if (name == QString("Response: "))
             return Type::Response;
-        if (name == u"Text: "_s)
+        if (name == QString("Text: "))
             return Type::Text;
-        if (name == u"ToolCall: "_s)
+        if (name == QString("ToolCall: "))
             return Type::ToolCall;
-        if (name == u"ToolResponse: "_s)
+        if (name == QString("ToolResponse: "))
             return Type::ToolResponse;
-        if (name == u"Think: "_s)
+        if (name == QString("Think: "))
             return Type::Think;
         throw std::invalid_argument(fmt::format("Chat item has unknown label: {:?}", name));
     }

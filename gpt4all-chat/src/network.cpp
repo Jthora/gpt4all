@@ -28,7 +28,7 @@
 #include <QSslSocket>
 #include <QSysInfo>
 #include <Qt>
-#include <QtLogging>
+#include <QLoggingCategory>
 #include <QUrl>
 #include <QUuid>
 
@@ -40,7 +40,7 @@
 #   include <gnu/libc-version.h>
 #endif
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 //#define DEBUG
 
@@ -209,7 +209,7 @@ bool Network::packageAndSendJson(const QString &ingestId, const QString &json)
 
     if (!modelInfo.id().isNull())
         if (auto tmpl = modelInfo.chatTemplate().asModern())
-            object.insert("chat_template"_L1, *tmpl);
+            object.insert(QString("chat_template"), *tmpl);
 
     QJsonDocument newDoc;
     newDoc.setObject(object);
@@ -325,38 +325,39 @@ void Network::sendStartup()
     m_sendUsageStats = true;
 
     const auto *display = QGuiApplication::primaryScreen();
-    trackEvent("startup", {
-        // Build info
-        { "build_compiler",     COMPILER_NAME                                                         },
-        { "build_compiler_ver", COMPILER_VER                                                          },
-        { "build_abi",          QSysInfo::buildAbi()                                                  },
-        { "build_cpu_arch",     QSysInfo::buildCpuArchitecture()                                      },
+    QVariantMap startupProps;
+    // Build info
+    startupProps["build_compiler"] = COMPILER_NAME;
+    startupProps["build_compiler_ver"] = COMPILER_VER;
+    startupProps["build_abi"] = QSysInfo::buildAbi();
+    startupProps["build_cpu_arch"] = QSysInfo::buildCpuArchitecture();
 #ifdef __GLIBC__
-        { "build_glibc_ver",    QStringLiteral(STR(__GLIBC__) "." STR(__GLIBC_MINOR__))               },
+    startupProps["build_glibc_ver"] = QStringLiteral(STR(__GLIBC__) "." STR(__GLIBC_MINOR__));
 #endif
-        { "qt_version",         QLibraryInfo::version().toString()                                    },
-        { "qt_debug" ,          QLibraryInfo::isDebugBuild()                                          },
-        { "qt_shared",          QLibraryInfo::isSharedBuild()                                         },
-        // System info
-        { "runtime_cpu_arch",   QSysInfo::currentCpuArchitecture()                                    },
+    startupProps["qt_version"] = QLibraryInfo::version().toString();
+    startupProps["qt_debug"] = QLibraryInfo::isDebugBuild();
+    startupProps["qt_shared"] = true; // Qt 6.2 compatibility - isSharedBuild not available
+    // System info
+    startupProps["runtime_cpu_arch"] = QSysInfo::currentCpuArchitecture();
 #ifdef __GLIBC__
-        { "runtime_glibc_ver",  gnu_get_libc_version()                                                },
+    startupProps["runtime_glibc_ver"] = gnu_get_libc_version();
 #endif
-        { "sys_kernel_type",    QSysInfo::kernelType()                                                },
-        { "sys_kernel_ver",     QSysInfo::kernelVersion()                                             },
-        { "sys_product_type",   QSysInfo::productType()                                               },
-        { "sys_product_ver",    QSysInfo::productVersion()                                            },
+    startupProps["sys_kernel_type"] = QSysInfo::kernelType();
+    startupProps["sys_kernel_ver"] = QSysInfo::kernelVersion();
+    startupProps["sys_product_type"] = QSysInfo::productType();
+    startupProps["sys_product_ver"] = QSysInfo::productVersion();
 #ifdef Q_OS_MAC
-        { "sys_hw_model",       getSysctl("hw.model").value_or(u"(unknown)"_s)                        },
+    startupProps["sys_hw_model"] = getSysctl("hw.model").value_or(QString("(unknown)"));
 #endif
-        { "$screen_dpi",        std::round(display->physicalDotsPerInch())                            },
-        { "display",            u"%1x%2"_s.arg(display->size().width()).arg(display->size().height()) },
-        { "ram",                LLM::globalInstance()->systemTotalRAMInGB()                           },
-        { "cpu",                getCPUModel()                                                         },
-        { "cpu_supports_avx2",  LLModel::Implementation::cpuSupportsAVX2()                            },
-        // Datalake status
-        { "datalake_active",    mySettings->networkIsActive()                                         },
-    });
+    startupProps["$screen_dpi"] = std::round(display->physicalDotsPerInch());
+    startupProps["display"] = QString("%1x%2").arg(display->size().width()).arg(display->size().height());
+    startupProps["ram"] = LLM::globalInstance()->systemTotalRAMInGB();
+    startupProps["cpu"] = getCPUModel();
+    startupProps["cpu_supports_avx2"] = LLModel::Implementation::cpuSupportsAVX2();
+    // Datalake status
+    startupProps["datalake_active"] = mySettings->networkIsActive();
+    
+    trackEvent("startup", startupProps);
     sendIpify();
 
     // mirror opt-out logic so the ratio can be used to infer totals
@@ -401,8 +402,8 @@ void Network::trackEvent(const QString &ev, const QVariantMap &props)
     properties.insert("session_id", m_sessionId);
     properties.insert("name", QCoreApplication::applicationName() + " v" + QCoreApplication::applicationVersion());
 
-    for (const auto &[key, value]: props.asKeyValueRange())
-        properties.insert(key, QJsonValue::fromVariant(value));
+    for (auto it = props.begin(); it != props.end(); ++it)
+        properties.insert(it.key(), QJsonValue::fromVariant(it.value()));
 
     QJsonObject event;
     event.insert("event", ev);

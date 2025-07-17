@@ -18,8 +18,8 @@
 #include <QRegularExpression>
 #include <QString>
 #include <Qt>
-#include <QtAssert>
-#include <QtLogging>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
 
 #include <optional>
 #include <utility>

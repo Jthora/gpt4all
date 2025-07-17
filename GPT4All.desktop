@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=GPT4All
+Comment=Large Language Model Chat Interface with CUDA acceleration
+Exec=/media/jono/nvme/projects/gpt4all/launch_gpt4all.sh
+Icon=/media/jono/nvme/projects/gpt4all/gpt4all-chat/icons/gpt4all.svg
+Terminal=true
+Categories=Development;Education;Science;
+StartupNotify=true
+StartupWMClass=chat
+X-GNOME-UsesNotifications=true

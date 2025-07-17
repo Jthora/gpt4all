@@ -11,8 +11,8 @@
 #include <QProcess>
 #include <QSettings>
 #include <QUrl>
-#include <QtLogging>
-#include <QtSystemDetection>
+#include <QLoggingCategory>
+#include <QtGlobal>
 
 #include <string>
 
@@ -26,7 +26,7 @@
 #include "macosdock.h"
 #endif
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 
 class MyLLM: public LLM { };
@@ -40,7 +40,8 @@ LLM::LLM()
     : QObject{nullptr}
     , m_compatHardware(LLModel::Implementation::hasSupportedCPU())
 {
-    QNetworkInformation::loadDefaultBackend();
+    // Qt 6.2 compatibility - loadDefaultBackend not available
+    // QNetworkInformation::loadDefaultBackend();
     auto * netinfo = QNetworkInformation::instance();
     if (netinfo) {
         connect(netinfo, &QNetworkInformation::reachabilityChanged,
@@ -64,7 +65,7 @@ bool LLM::checkForUpdates() const
     Network::globalInstance()->trackEvent("check_for_updates");
 
 #if defined(Q_OS_LINUX)
-    QString tool = u"maintenancetool"_s;
+    QString tool = QString("maintenancetool");
 #elif defined(Q_OS_WINDOWS)
     QString tool = u"maintenancetool.exe"_s;
 #elif defined(Q_OS_DARWIN)

@@ -5,7 +5,7 @@
 #include <QByteArray>
 #include <QDateTime>
 #include <QHash>
-#include <QLatin1StringView> // IWYU pragma: keep
+#include <QLatin1String> // Qt 6.2 compatibility
 #include <QList>
 #include <QMutex>
 #include <QNetworkAccessManager>
@@ -19,7 +19,7 @@
 #include <QVariant>
 #include <QVector> // IWYU pragma: keep
 #include <Qt>
-#include <QtTypes>
+#include <QtGlobal> // Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 #include <optional>
 #include <utility>
@@ -28,7 +28,7 @@
 // IWYU pragma: no_forward_declare QSslError
 class QUrl;
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals not available
 
 
 class UpgradeableSetting {
@@ -244,7 +244,7 @@ public:
     bool shouldSaveMetadata() const;
 
 private:
-    QVariant getField(QLatin1StringView name) const;
+    QVariant getField(QLatin1String name) const;
 
     QString m_id;
     QString m_name;
@@ -504,13 +504,13 @@ public:
 
     static inline QString toFileSize(quint64 sz) {
         if (sz < 1024) {
-            return u"%1 bytes"_s.arg(sz);
+            return QString("%1 bytes").arg(sz);
         } else if (sz < 1024 * 1024) {
-            return u"%1 KB"_s.arg(qreal(sz) / 1024, 0, 'g', 3);
+            return QString("%1 KB").arg(qreal(sz) / 1024, 0, 'g', 3);
         } else if (sz < 1024 * 1024 * 1024) {
-            return u"%1 MB"_s.arg(qreal(sz) / (1024 * 1024), 0, 'g', 3);
+            return QString("%1 MB").arg(qreal(sz) / (1024 * 1024), 0, 'g', 3);
         } else {
-            return u"%1 GB"_s.arg(qreal(sz) / (1024 * 1024 * 1024), 0, 'g', 3);
+            return QString("%1 GB").arg(qreal(sz) / (1024 * 1024 * 1024), 0, 'g', 3);
         }
     }
 

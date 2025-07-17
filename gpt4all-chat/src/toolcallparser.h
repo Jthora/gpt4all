@@ -8,7 +8,7 @@
 
 namespace ToolEnums { enum class ParseState; }
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals not available
 
 
 class ToolCallParser
@@ -29,8 +29,8 @@ public:
     QStringList buffers() const;
     int numberOfBuffers() const { return m_buffers.size(); }
 
-    static QString makeStartTag(const QString &name) { return u"<%1>"_s .arg(name); }
-    static QString makeEndTag  (const QString &name) { return u"</%1>"_s.arg(name); }
+    static QString makeStartTag(const QString &name) { return QString("<%1>").arg(name); }
+    static QString makeEndTag  (const QString &name) { return QString("</%1>").arg(name); }
 
 private:
     QByteArray &currentBuffer();
@@ -57,13 +57,13 @@ namespace ToolCallConstants
 {
     // NB: the parsing code assumes the first char of the various tags differ
 
-    inline const QString CodeInterpreterFunction = u"javascript_interpret"_s;
+    inline const QString CodeInterpreterFunction = QString("javascript_interpret");
     inline const QString CodeInterpreterStartTag = ToolCallParser::makeStartTag(CodeInterpreterFunction);
     inline const QString CodeInterpreterEndTag   = ToolCallParser::makeEndTag  (CodeInterpreterFunction);
-    inline const QString CodeInterpreterPrefix   = u"%1\n```javascript\n"_s.arg(CodeInterpreterStartTag);
-    inline const QString CodeInterpreterSuffix   = u"```\n%1"_s            .arg(CodeInterpreterEndTag  );
+    inline const QString CodeInterpreterPrefix   = QString("%1\n```javascript\n").arg(CodeInterpreterStartTag);
+    inline const QString CodeInterpreterSuffix   = QString("```\n%1")            .arg(CodeInterpreterEndTag  );
 
-    inline const QString ThinkTagName  = u"think"_s;
+    inline const QString ThinkTagName  = QString("think");
     inline const QString ThinkStartTag = ToolCallParser::makeStartTag(ThinkTagName);
     inline const QString ThinkEndTag   = ToolCallParser::makeEndTag  (ThinkTagName);
 

@@ -5,7 +5,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <QtTypes> // IWYU pragma: keep
+#include <QtGlobal> // IWYU pragma: keep - Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 // IWYU pragma: no_forward_declare MessageItem
 // IWYU pragma: no_forward_declare PromptAttachment

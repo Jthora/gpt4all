@@ -15,7 +15,7 @@
 #include <QSettings>
 #include <QStringList> // IWYU pragma: keep
 #include <Qt>
-#include <QtTypes>
+#include <QtGlobal>
 
 #include <algorithm>
 

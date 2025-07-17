@@ -4,6 +4,7 @@ import QtQuick.Controls
 import QtQuick.Controls.Basic
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
+import Qt.labs.settings
 import llm
 import chatlistmodel
 import download

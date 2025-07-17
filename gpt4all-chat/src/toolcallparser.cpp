@@ -4,8 +4,8 @@
 
 #include <QChar>
 #include <QSet>
-#include <QtAssert>
-#include <QtTypes>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QtGlobal>
 
 #include <stdexcept>
 

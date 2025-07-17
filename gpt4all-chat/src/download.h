@@ -13,7 +13,7 @@
 #include <QSslError>
 #include <QString>
 #include <QThread>
-#include <QtTypes>
+#include <QtGlobal> // Qt 6.2 compatibility (QtTypes included in QtGlobal)
 
 // IWYU pragma: no_forward_declare QFile
 // IWYU pragma: no_forward_declare QList

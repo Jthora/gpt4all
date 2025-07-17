@@ -24,9 +24,8 @@
 #include <QMap>
 #include <QUtf8StringView>
 #include <QVariant>
-#include <QtLogging>
-#include <QtMinMax>
-#include <QtTypes>
+#include <QLoggingCategory>
+#include <QtGlobal>
 
 #include <algorithm>
 #include <cmath>
@@ -36,13 +35,13 @@
 #ifdef GPT4ALL_USE_QTPDF
 #   include <QPdfDocument>
 #   include <QPdfSelection>
-#else
+#elif !defined(GPT4ALL_NO_PDF_SUPPORT)
 #   include <fpdfview.h>
 #   include <fpdf_doc.h>
 #   include <fpdf_text.h>
 #endif
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - Qt::Literals::StringLiterals not available
 namespace ranges = std::ranges;
 namespace us = unum::usearch;
 
@@ -99,9 +98,9 @@ static int s_batchSize = 100;
 
 static const QString INIT_DB_SQL[] = {
     // automatically free unused disk space
-    u"pragma auto_vacuum = FULL;"_s,
+    QString("pragma auto_vacuum = FULL;"),
     // create tables
-    uR"(
+    QString(R"(
         create table chunks(
             id            integer primary key autoincrement,
             document_id   integer not null,
@@ -118,7 +117,7 @@ static const QString INIT_DB_SQL[] = {
             tokens        integer default 0 not null,
             foreign key(document_id) references documents(id)
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create virtual table chunks_fts using fts5(
             id unindexed,
             document_id unindexed,
@@ -132,7 +131,7 @@ static const QString INIT_DB_SQL[] = {
             content_rowid='id',
             tokenize='porter'
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create table collections(
             id                  integer primary key,
             name                text unique not null,
@@ -140,12 +139,12 @@ static const QString INIT_DB_SQL[] = {
             last_update_time    integer,
             embedding_model     text
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create table folders(
             id   integer primary key autoincrement,
             path text unique not null
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create table collection_items(
             collection_id integer not null,
             folder_id     integer not null,
@@ -153,7 +152,7 @@ static const QString INIT_DB_SQL[] = {
             foreign key(folder_id)     references folders(id),
             unique(collection_id, folder_id)
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create table documents(
             id            integer primary key,
             folder_id     integer not null,
@@ -161,7 +160,7 @@ static const QString INIT_DB_SQL[] = {
             document_path text unique not null,
             foreign key(folder_id) references folders(id)
         );
-    )"_s, uR"(
+    )"), QString(R"(
         create table embeddings(
             model         text not null,
             folder_id     integer not null,
@@ -172,48 +171,48 @@ static const QString INIT_DB_SQL[] = {
             foreign key(chunk_id)  references chunks(id),
             unique(model, chunk_id)
         );
-    )"_s,
+    )"),
 };
 
-static const QString INSERT_CHUNK_SQL = uR"(
+static const QString INSERT_CHUNK_SQL = QString(R"(
     insert into chunks(document_id, chunk_text,
         file, title, author, subject, keywords, page, line_from, line_to, words)
         values(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         returning id;
-)"_s;
+)");
 
-static const QString INSERT_CHUNK_FTS_SQL = uR"(
+static const QString INSERT_CHUNK_FTS_SQL = QString(R"(
         insert into chunks_fts(document_id, chunk_text,
             file, title, author, subject, keywords)
             values(?, ?, ?, ?, ?, ?, ?);
-)"_s;
+)");
 
 static const QString SELECT_CHUNKED_DOCUMENTS_SQL[] = {
-    uR"(
+    QString(R"(
         select distinct document_id from chunks;
-    )"_s, uR"(
+    )"), QString(R"(
         select distinct document_id from chunks_fts;
-    )"_s,
+    )"),
 };
 
 static const QString DELETE_CHUNKS_SQL[] = {
-    uR"(
+    QString(R"(
         delete from embeddings
         where chunk_id in (
             select id from chunks where document_id = ?
         );
-    )"_s, uR"(
+    )"), QString(R"(
         delete from chunks where document_id = ?;
-    )"_s, uR"(
+    )"), QString(R"(
         delete from chunks_fts where document_id = ?;
-    )"_s,
+    )"),
 };
 
-static const QString SELECT_CHUNKS_BY_DOCUMENT_SQL = uR"(
+static const QString SELECT_CHUNKS_BY_DOCUMENT_SQL = QString(R"(
     select id from chunks WHERE document_id = ?;
-)"_s;
+)");
 
-static const QString SELECT_CHUNKS_SQL = uR"(
+static const QString SELECT_CHUNKS_SQL = QString(R"(
     select c.id, d.document_time, d.document_path, c.chunk_text, c.file, c.title, c.author, c.page, c.line_from, c.line_to, co.name
     from chunks c
     join documents d on d.id = c.document_id
@@ -221,9 +220,9 @@ static const QString SELECT_CHUNKS_SQL = uR"(
     join collection_items ci on ci.folder_id = f.id
     join collections co on co.id = ci.collection_id
     where c.id in (%1);
-)"_s;
+)");
 
-static const QString SELECT_UNCOMPLETED_CHUNKS_SQL = uR"(
+static const QString SELECT_UNCOMPLETED_CHUNKS_SQL = QString(R"(
     select co.name, co.embedding_model, c.id, d.folder_id, c.chunk_text
     from chunks c
     join documents d on d.id = c.document_id
@@ -235,16 +234,16 @@ static const QString SELECT_UNCOMPLETED_CHUNKS_SQL = uR"(
         from embeddings e
         where e.chunk_id = c.id and e.model = co.embedding_model
     );
-)"_s;
+)");
 
-static const QString SELECT_COUNT_CHUNKS_SQL = uR"(
+static const QString SELECT_COUNT_CHUNKS_SQL = QString(R"(
     select count(c.id)
     from chunks c
     join documents d on d.id = c.document_id
     where d.folder_id = ?;
-)"_s;
+)");
 
-static const QString SELECT_CHUNKS_FTS_SQL = uR"(
+static const QString SELECT_CHUNKS_FTS_SQL = QString(R"(
     select fts.id, bm25(chunks_fts) as score
     from chunks_fts fts
     join documents d on fts.document_id = d.id
@@ -253,7 +252,7 @@ static const QString SELECT_CHUNKS_FTS_SQL = uR"(
     where chunks_fts match ?
     and co.name in ('%1')
     order by score limit %2;
-)"_s;
+)");
 
 
 #define NAMED_PAIR(name, typea, a, typeb, b) \
@@ -313,62 +312,62 @@ static bool selectChunk(QSqlQuery &q, const QList<int> &chunk_ids)
     return q.exec();
 }
 
-static const QString INSERT_COLLECTION_SQL = uR"(
+static const QString INSERT_COLLECTION_SQL = QString(R"(
     insert into collections(name, start_update_time, last_update_time, embedding_model)
         values(?, ?, ?, ?)
         returning id;
-    )"_s;
+    )");
 
-static const QString SELECT_FOLDERS_FROM_COLLECTIONS_SQL = uR"(
+static const QString SELECT_FOLDERS_FROM_COLLECTIONS_SQL = QString(R"(
     select f.id, f.path
     from collections c
     join collection_items ci on ci.collection_id = c.id
     join folders f on ci.folder_id = f.id
     where c.name = ?;
-    )"_s;
+    )");
 
-static const QString SELECT_COLLECTIONS_SQL_V1 = uR"(
+static const QString SELECT_COLLECTIONS_SQL_V1 = QString(R"(
     select c.collection_name, f.folder_path, f.id
     from collections c
     join folders f on c.folder_id = f.id
     order by c.collection_name asc, f.folder_path asc;
-    )"_s;
+    )");
 
-static const QString SELECT_COLLECTIONS_SQL_V2 = uR"(
+static const QString SELECT_COLLECTIONS_SQL_V2 = QString(R"(
     select c.id, c.name, f.path, f.id, c.start_update_time, c.last_update_time, c.embedding_model
     from collections c
     join collection_items ci on ci.collection_id = c.id
     join folders f on ci.folder_id = f.id
     order by c.name asc, f.path asc;
-    )"_s;
+    )");
 
-static const QString SELECT_COLLECTION_BY_NAME_SQL = uR"(
+static const QString SELECT_COLLECTION_BY_NAME_SQL = QString(R"(
     select id, name, start_update_time, last_update_time, embedding_model
     from collections c
     where name = ?;
-    )"_s;
+    )");
 
-static const QString SET_COLLECTION_EMBEDDING_MODEL_SQL = uR"(
+static const QString SET_COLLECTION_EMBEDDING_MODEL_SQL = QString(R"(
     update collections
     set embedding_model = ?
     where name = ?;
-    )"_s;
+    )");
 
-static const QString UPDATE_START_UPDATE_TIME_SQL = uR"(
+static const QString UPDATE_START_UPDATE_TIME_SQL = QString(R"(
     update collections set start_update_time = ? where id = ?;
-)"_s;
+)");
 
-static const QString UPDATE_LAST_UPDATE_TIME_SQL = uR"(
+static const QString UPDATE_LAST_UPDATE_TIME_SQL = QString(R"(
     update collections set last_update_time = ? where id = ?;
-)"_s;
+)");
 
-static const QString FTS_INTEGRITY_SQL = uR"(
+static const QString FTS_INTEGRITY_SQL = QString(R"(
     insert into chunks_fts(chunks_fts, rank) values('integrity-check', 1);
-)"_s;
+)");
 
-static const QString FTS_REBUILD_SQL = uR"(
+static const QString FTS_REBUILD_SQL = QString(R"(
     insert into chunks_fts(chunks_fts) values('rebuild');
-)"_s;
+)");
 
 static bool addCollection(QSqlQuery &q, const QString &collection_name, const QDateTime &start_update,
                           const QDateTime &last_update, const QString &embedding_model, CollectionItem &item)
@@ -500,27 +499,27 @@ static bool updateLastUpdateTime(QSqlQuery &q, int id, qint64 update_time)
     return q.exec();
 }
 
-static const QString INSERT_FOLDERS_SQL = uR"(
+static const QString INSERT_FOLDERS_SQL = QString(R"(
     insert into folders(path) values(?);
-    )"_s;
+    )");
 
-static const QString DELETE_FOLDERS_SQL = uR"(
+static const QString DELETE_FOLDERS_SQL = QString(R"(
     delete from folders where id = ?;
-    )"_s;
+    )");
 
-static const QString SELECT_FOLDERS_FROM_PATH_SQL = uR"(
+static const QString SELECT_FOLDERS_FROM_PATH_SQL = QString(R"(
     select id from folders where path = ?;
-    )"_s;
+    )");
 
-static const QString GET_FOLDER_EMBEDDING_MODEL_SQL = uR"(
+static const QString GET_FOLDER_EMBEDDING_MODEL_SQL = QString(R"(
     select co.embedding_model
     from collections co
     join collection_items ci on ci.collection_id = co.id
     where ci.folder_id = ?;
-    )"_s;
+    )");
 
 static const QString FOLDER_REMOVE_ALL_DOCS_SQL[] = {
-    uR"(
+    QString(R"(
         delete from embeddings
         where chunk_id in (
             select c.id
@@ -529,7 +528,7 @@ static const QString FOLDER_REMOVE_ALL_DOCS_SQL[] = {
             join folders f on f.id = d.folder_id
             where f.path = ?
         );
-    )"_s, uR"(
+    )"), QString(R"(
         delete from chunks
         where document_id in (
             select d.id
@@ -537,7 +536,7 @@ static const QString FOLDER_REMOVE_ALL_DOCS_SQL[] = {
             join folders f on f.id = d.folder_id
             where f.path = ?
         );
-    )"_s, uR"(
+    )"), QString(R"(
         delete from documents
         where id in (
             select d.id
@@ -545,7 +544,7 @@ static const QString FOLDER_REMOVE_ALL_DOCS_SQL[] = {
             join folders f on f.id = d.folder_id
             where f.path = ?
         );
-    )"_s,
+    )"),
 };
 
 static bool addFolderToDB(QSqlQuery &q, const QString &folder_path, int *folder_id)
@@ -593,22 +592,22 @@ static bool sqlGetFolderEmbeddingModel(QSqlQuery &q, int id, QString &embedding_
     return true;
 }
 
-static const QString INSERT_COLLECTION_ITEM_SQL = uR"(
+static const QString INSERT_COLLECTION_ITEM_SQL = QString(R"(
     insert into collection_items(collection_id, folder_id)
     values(?, ?)
     on conflict do nothing;
-)"_s;
+)");
 
-static const QString DELETE_COLLECTION_FOLDER_SQL = uR"(
+static const QString DELETE_COLLECTION_FOLDER_SQL = QString(R"(
     delete from collection_items
     where collection_id = (select id from collections where name = :name) and folder_id = :folder_id
     returning (select count(*) from collection_items where folder_id = :folder_id);
-)"_s;
+)");
 
-static const QString PRUNE_COLLECTIONS_SQL = uR"(
+static const QString PRUNE_COLLECTIONS_SQL = QString(R"(
     delete from collections
     where id not in (select collection_id from collection_items);
-)"_s;
+)");
 
 // 0 = already exists, 1 = added, -1 = error
 static int addCollectionItem(QSqlQuery &q, int collection_id, int folder_id)
@@ -639,36 +638,36 @@ static bool sqlPruneCollections(QSqlQuery &q)
     return q.exec(PRUNE_COLLECTIONS_SQL);
 }
 
-static const QString INSERT_DOCUMENTS_SQL = uR"(
+static const QString INSERT_DOCUMENTS_SQL = QString(R"(
     insert into documents(folder_id, document_time, document_path) values(?, ?, ?);
-    )"_s;
+    )");
 
-static const QString UPDATE_DOCUMENT_TIME_SQL = uR"(
+static const QString UPDATE_DOCUMENT_TIME_SQL = QString(R"(
     update documents set document_time = ? where id = ?;
-    )"_s;
+    )");
 
-static const QString DELETE_DOCUMENTS_SQL = uR"(
+static const QString DELETE_DOCUMENTS_SQL = QString(R"(
     delete from documents where id = ?;
-    )"_s;
+    )");
 
-static const QString SELECT_DOCUMENT_SQL = uR"(
+static const QString SELECT_DOCUMENT_SQL = QString(R"(
     select id, document_time from documents where document_path = ?;
-    )"_s;
+    )");
 
-static const QString SELECT_DOCUMENTS_SQL = uR"(
+static const QString SELECT_DOCUMENTS_SQL = QString(R"(
     select id from documents where folder_id = ?;
-    )"_s;
+    )");
 
-static const QString SELECT_ALL_DOCUMENTS_SQL = uR"(
+static const QString SELECT_ALL_DOCUMENTS_SQL = QString(R"(
     select id, document_path from documents;
-    )"_s;
+    )");
 
-static const QString SELECT_COUNT_STATISTICS_SQL = uR"(
+static const QString SELECT_COUNT_STATISTICS_SQL = QString(R"(
     select count(distinct d.id), sum(c.words), sum(c.tokens)
     from documents d
     left join chunks c on d.id = c.document_id
     where d.folder_id = ?;
-    )"_s;
+    )");
 
 static bool addDocument(QSqlQuery &q, int folder_id, qint64 document_time, const QString &document_path, int *document_id)
 {
@@ -743,7 +742,7 @@ static bool selectCountStatistics(QSqlQuery &q, int folder_id, int *total_docs, 
 }
 
 // insert embedding only if still needed
-static const QString INSERT_EMBEDDING_SQL = uR"(
+static const QString INSERT_EMBEDDING_SQL = QString(R"(
     insert into embeddings(model, folder_id, chunk_id, embedding)
     select :model, d.folder_id, :chunk_id, :embedding
     from chunks c
@@ -753,25 +752,25 @@ static const QString INSERT_EMBEDDING_SQL = uR"(
     join collections co on co.id = ci.collection_id
     where co.embedding_model = :model and c.id = :chunk_id
     limit 1;
-)"_s;
+)");
 
-static const QString GET_COLLECTION_EMBEDDINGS_SQL = uR"(
+static const QString GET_COLLECTION_EMBEDDINGS_SQL = QString(R"(
     select e.chunk_id, e.embedding
     from embeddings e
     join collections co on co.embedding_model = e.model
     join collection_items ci on ci.folder_id = e.folder_id and ci.collection_id = co.id
     where co.name in ('%1');
-)"_s;
+)");
 
-static const QString GET_CHUNK_EMBEDDINGS_SQL = uR"(
+static const QString GET_CHUNK_EMBEDDINGS_SQL = QString(R"(
     select e.chunk_id, e.embedding
     from embeddings e
     where e.chunk_id in (%1);
-)"_s;
+)");
 
-static const QString GET_CHUNK_FILE_SQL = uR"(
+static const QString GET_CHUNK_FILE_SQL = QString(R"(
     select file from chunks where id = ?;
-)"_s;
+)");
 
 namespace {
     struct Embedding { QString model; int folder_id; int chunk_id; QByteArray data; };
@@ -922,7 +921,7 @@ int Database::openDatabase(const QString &modelPath, bool create, int ver)
     }
     if (m_db.isOpen())
         m_db.close();
-    auto dbPath = u"%1/localdocs_v%2.db"_s.arg(modelPath).arg(ver);
+    auto dbPath = QString("%1/localdocs_v%2.db").arg(modelPath).arg(ver);
     if (!create && !QFileInfo::exists(dbPath))
         return 0;
     m_db.setDatabaseName(dbPath);
@@ -1186,7 +1185,7 @@ private:
     QString                    m_pageText;
     std::optional<QTextStream> m_stream;
 };
-#else
+#elif !defined(GPT4ALL_NO_PDF_SUPPORT)
 class PdfDocumentReader final : public DocumentReader {
 public:
     explicit PdfDocumentReader(DocumentInfo info)
@@ -1277,6 +1276,21 @@ private:
     QString                    m_pageText;
     std::optional<QTextStream> m_stream;
 };
+#else // defined(GPT4ALL_NO_PDF_SUPPORT)
+// Stub PDF reader when PDF support is disabled
+class PdfDocumentReader final : public DocumentReader {
+public:
+    explicit PdfDocumentReader(DocumentInfo info)
+        : DocumentReader(std::move(info))
+    {
+        throw std::runtime_error("PDF support not available on this platform");
+    }
+
+protected:
+    std::optional<QString> advance() override {
+        throw std::runtime_error("PDF support not available on this platform");
+    }
+};
 #endif // !defined(GPT4ALL_USE_QTPDF)
 
 class WordDocumentReader final : public DocumentReader {
@@ -1352,7 +1366,7 @@ protected:
                     const char *text = node.text().get();
                     if (*text) {
                         foundText = true;
-                        m_buffer += QUtf8StringView(text);
+                        m_buffer += QString::fromUtf8(text);
                     }
                 } else if (node_name == "w:br") {
                     m_buffer += u'\n';
@@ -1418,8 +1432,16 @@ protected:
 
 std::unique_ptr<DocumentReader> DocumentReader::fromDocument(DocumentInfo doc)
 {
+#ifdef GPT4ALL_NO_PDF_SUPPORT
+    if (doc.isPdf()) {
+        // Skip PDF files when PDF support is disabled
+        qWarning() << "Skipping PDF file - PDF support not available on this platform:" << doc.file.canonicalFilePath();
+        return nullptr;
+    }
+#else
     if (doc.isPdf())
         return std::make_unique<PdfDocumentReader>(std::move(doc));
+#endif
     if (doc.isDocx())
         return std::make_unique<WordDocumentReader>(std::move(doc));
     return std::make_unique<TxtDocumentReader>(std::move(doc));
@@ -1436,6 +1458,14 @@ void ChunkStreamer::setDocument(DocumentInfo doc, int documentId, const QString 
     if (!m_docKey || *m_docKey != docKey) {
         m_docKey         = docKey;
         m_reader         = DocumentReader::fromDocument(std::move(doc));
+        
+        // Handle case when PDF support is disabled
+        if (!m_reader) {
+            qWarning() << "Skipping unsupported document type";
+            m_docKey.reset();
+            return;
+        }
+        
         m_documentId     = documentId;
         m_embeddingModel = embeddingModel;
         m_chunk.clear();
@@ -1463,6 +1493,12 @@ void ChunkStreamer::reset()
 
 ChunkStreamer::Status ChunkStreamer::step()
 {
+    // Handle case when document reader is not available (e.g., PDF support disabled)
+    if (!m_reader) {
+        m_docKey.reset();
+        return Status::ERROR;
+    }
+
     // TODO: implement line_from/line_to
     constexpr int line_from = -1;
     constexpr int line_to = -1;
@@ -1633,7 +1669,9 @@ void Database::handleEmbeddingsGenerated(const QVector<EmbeddingResult> &embeddi
     commit();
 
     // FIXME(jared): embedding counts are per-collectionitem, not per-folder
-    for (const auto &[key, stat]: std::as_const(stats).asKeyValueRange()) {
+    for (auto it = stats.begin(); it != stats.end(); ++it) {
+        const auto &key = it.key();
+        const auto &stat = it.value();
         if (!m_collectionMap.contains(key.folder_id)) continue;
         CollectionItem item = guiCollectionItem(key.folder_id);
         Q_ASSERT(item.currentEmbeddingsToIndex >= stat.nAdded + stat.nSkipped);
@@ -2009,12 +2047,18 @@ void Database::scheduleUncompletedEmbeddings()
 
     // map of (folder_id, collection) -> incomplete count
     QMap<QPair<int, QString>, int> itemNIncomplete;
-    for (const auto &[chunk, collections]: std::as_const(chunkList).asKeyValueRange())
+    for (auto it = chunkList.begin(); it != chunkList.end(); ++it) {
+        const auto &chunk = it.key();
+        const auto &collections = it.value();
         for (const auto &collection: std::as_const(collections))
-            itemNIncomplete[{ chunk.folder_id, collection }]++;
+            itemNIncomplete[std::make_pair(chunk.folder_id, collection)]++;
+    }
 
-    for (const auto &[key, nIncomplete]: std::as_const(itemNIncomplete).asKeyValueRange()) {
-        const auto &[folder_id, collection] = key;
+    for (auto it = itemNIncomplete.begin(); it != itemNIncomplete.end(); ++it) {
+        const auto &key = it.key();
+        const auto &nIncomplete = it.value();
+        const auto &folder_id = key.first;
+        const auto &collection = key.second;
 
         /* FIXME(jared): this needs to be split by collection because different
          * collections have different embedding models */
@@ -2441,7 +2485,7 @@ QList<Database::BM25Query> Database::queriesForFTS5(const QString &input)
 
     BM25Query b;
     b.input = oWords.join(" ");
-    b.query = "(" + quotedWords.join(" OR ") + ")";
+    b.query = QString("(") + quotedWords.join(" OR ") + QString(")");
     b.qlength = 1; // length of phrase
     b.ilength = oWords.size();
     b.rlength = oWords.size() - quotedWords.size();

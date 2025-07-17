@@ -22,15 +22,13 @@
 #include <QVariant>
 #include <QXmlStreamReader>
 #include <Qt>
-#include <QtAssert>
-#include <QtLogging>
+#include <QDebug> // Qt 6.2 compatibility
+#include <QLoggingCategory>
 
 #include <expected>
 #include <functional>
 #include <iostream>
 #include <utility>
-
-using namespace Qt::Literals::StringLiterals;
 
 //#define DEBUG
 
@@ -83,7 +81,7 @@ static auto parsePrompt(QXmlStreamReader &xml) -> std::expected<QJsonArray, QStr
     QJsonArray messages;
 
     auto xmlError = [&xml] {
-        return std::unexpected(u"%1:%2: %3"_s.arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
+        return std::unexpected(QString("%1:%2: %3").arg(xml.lineNumber()).arg(xml.columnNumber()).arg(xml.errorString()));
     };
 
     if (xml.hasError())
@@ -95,17 +93,16 @@ static auto parsePrompt(QXmlStreamReader &xml) -> std::expected<QJsonArray, QStr
     bool foundElement = false;
     do {
         switch (xml.readNext()) {
-            using enum QXmlStreamReader::TokenType;
-        case Invalid:
+        case QXmlStreamReader::Invalid:
             return xmlError();
-        case EndDocument:
+        case QXmlStreamReader::EndDocument:
             return messages;
         default:
             foundElement = true;
-        case StartDocument:
-        case Comment:
-        case DTD:
-        case ProcessingInstruction:
+        case QXmlStreamReader::StartDocument:
+        case QXmlStreamReader::Comment:
+        case QXmlStreamReader::DTD:
+        case QXmlStreamReader::ProcessingInstruction:
             ;
         }
     } while (!foundElement);
@@ -114,40 +111,39 @@ static auto parsePrompt(QXmlStreamReader &xml) -> std::expected<QJsonArray, QStr
     bool foundRoot = false;
     for (;;) {
         switch (xml.tokenType()) {
-            using enum QXmlStreamReader::TokenType;
-        case StartElement:
+        case QXmlStreamReader::StartElement:
             {
                 auto name = xml.name();
                 if (!foundRoot) {
-                    if (name != "chat"_L1)
-                        return std::unexpected(u"unexpected tag: %1"_s.arg(name));
+                    if (name != QLatin1String("chat"))
+                        return std::unexpected(QString("unexpected tag: %1").arg(name));
                     foundRoot = true;
                 } else {
-                    if (name != "user"_L1 && name != "assistant"_L1 && name != "system"_L1)
-                        return std::unexpected(u"unknown role: %1"_s.arg(name));
+                    if (name != QLatin1String("user") && name != QLatin1String("assistant") && name != QLatin1String("system"))
+                        return std::unexpected(QString("unknown role: %1").arg(name));
                     auto content = xml.readElementText();
-                    if (xml.tokenType() != EndElement)
+                    if (xml.tokenType() != QXmlStreamReader::EndElement)
                         return xmlError();
                     messages << makeJsonObject({
-                        { "role"_L1,    name.toString().trimmed() },
-                        { "content"_L1, content                   },
+                        { QLatin1String("role"),    name.toString().trimmed() },
+                        { QLatin1String("content"), content                   },
                     });
                 }
                 break;
             }
-        case Characters:
+        case QXmlStreamReader::Characters:
             if (!xml.isWhitespace())
-                return std::unexpected(u"unexpected text: %1"_s.arg(xml.text()));
-        case Comment:
-        case ProcessingInstruction:
-        case EndElement:
+                return std::unexpected(QString("unexpected text: %1").arg(xml.text()));
+        case QXmlStreamReader::Comment:
+        case QXmlStreamReader::ProcessingInstruction:
+        case QXmlStreamReader::EndElement:
             break;
-        case EndDocument:
+        case QXmlStreamReader::EndDocument:
             return messages;
-        case Invalid:
+        case QXmlStreamReader::Invalid:
             return xmlError();
         default:
-            return std::unexpected(u"unexpected token: %1"_s.arg(xml.tokenString()));
+            return std::unexpected(QString("unexpected token: %1").arg(xml.tokenString()));
         }
         xml.readNext();
     }
@@ -172,23 +168,23 @@ void ChatAPI::prompt(
     // the tokenization used by the OpenAI model we're calling. OpenAI has not introduced any means of
     // using the REST API to count tokens in a prompt.
     auto root = makeJsonObject({
-        { "model"_L1,       m_modelName     },
-        { "stream"_L1,      true            },
-        { "temperature"_L1, promptCtx.temp  },
-        { "top_p"_L1,       promptCtx.top_p },
+        { QLatin1String("model"),       m_modelName     },
+        { QLatin1String("stream"),      true            },
+        { QLatin1String("temperature"), promptCtx.temp  },
+        { QLatin1String("top_p"),       promptCtx.top_p },
     });
 
     // conversation history
     {
-        QUtf8StringView promptUtf8(prompt);
-        QXmlStreamReader xml(promptUtf8);
+        QString promptStr = QString::fromUtf8(prompt.data(), prompt.size());
+        QXmlStreamReader xml(promptStr);
         auto messages = parsePrompt(xml);
         if (!messages) {
             auto error = fmt::format("Failed to parse API model prompt: {}", messages.error());
-            qDebug().noquote() << "ChatAPI ERROR:" << error << "Prompt:\n\n" << promptUtf8 << '\n';
+            qDebug().noquote() << "ChatAPI ERROR:" << QString::fromStdString(error) << "Prompt:\n\n" << promptStr << '\n';
             throw std::invalid_argument(error);
         }
-        root.insert("messages"_L1, *messages);
+        root.insert(QLatin1String("messages"), *messages);
     }
 
     QJsonDocument doc(root);
@@ -230,7 +226,7 @@ bool ChatAPI::callResponse(int32_t token, const std::string& string)
 void ChatAPIWorker::request(const QString &apiKey, const QByteArray &array)
 {
     QUrl apiUrl(m_chat->url());
-    const QString authorization = u"Bearer %1"_s.arg(apiKey).trimmed();
+    const QString authorization = QString("Bearer %1").arg(apiKey).trimmed();
     QNetworkRequest request(apiUrl);
     request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
     request.setRawHeader("Authorization", authorization.toUtf8());
@@ -303,7 +299,7 @@ void ChatAPIWorker::handleReadyRead()
     if (!ok || code != 200) {
         m_chat->callResponse(
             -1,
-            u"ERROR: ChatAPIWorker::handleReadyRead got HTTP Error %1 %2: %3"_s
+            QString("ERROR: ChatAPIWorker::handleReadyRead got HTTP Error %1 %2: %3")
                 .arg(code).arg(reply->errorString(), reply->readAll()).toStdString()
         );
         emit finished();
@@ -325,7 +321,7 @@ void ChatAPIWorker::handleReadyRead()
         QJsonParseError err;
         const QJsonDocument document = QJsonDocument::fromJson(jsonData.toUtf8(), &err);
         if (err.error != QJsonParseError::NoError) {
-            m_chat->callResponse(-1, u"ERROR: ChatAPI responded with invalid json \"%1\""_s
+            m_chat->callResponse(-1, QString("ERROR: ChatAPI responded with invalid json \"%1\"")
                                          .arg(err.errorString()).toStdString());
             continue;
         }

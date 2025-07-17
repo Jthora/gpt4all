@@ -7,7 +7,7 @@
 #include <QObject>
 #include <QString>
 #include <QThread>
-#include <QtAssert>
+#include <QDebug> // Qt 6.2 compatibility
 
 class QJSEngine;
 

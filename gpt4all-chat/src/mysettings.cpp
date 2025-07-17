@@ -17,8 +17,8 @@
 #include <QStandardPaths>
 #include <QThread>
 #include <QUrl>
-#include <QtLogging>
-#include <QtAssert>
+#include <QLoggingCategory>
+#include <QDebug> // Qt 6.2 compatibility
 
 #include <algorithm>
 #include <string>
@@ -29,7 +29,7 @@
     #include <cstring>
 #endif
 
-using namespace Qt::Literals::StringLiterals;
+// Qt 6.2 compatibility - string literal operators not available
 
 
 // used only for settings serialization, do not translate
@@ -39,10 +39,10 @@ static const QStringList fontSizeNames       { "Small", "Medium", "Large" };
 
 // psuedo-enum
 namespace ModelSettingsKey { namespace {
-    auto ChatTemplate   = "chatTemplate"_L1;
-    auto PromptTemplate = "promptTemplate"_L1; // legacy
-    auto SystemMessage  = "systemMessage"_L1;
-    auto SystemPrompt   = "systemPrompt"_L1;   // legacy
+    auto ChatTemplate   = QLatin1String("chatTemplate");
+    auto PromptTemplate = QLatin1String("promptTemplate"); // legacy
+    auto SystemMessage  = QLatin1String("systemMessage");
+    auto SystemPrompt   = QLatin1String("systemPrompt");   // legacy
 } } // namespace ModelSettingsKey::(anonymous)
 
 namespace defaults {
@@ -79,7 +79,7 @@ static QString defaultLocalModelsPath()
 {
     QString localPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
         + "/";
-    QString testWritePath = localPath + u"test_write.txt"_s;
+    QString testWritePath = localPath + QString("test_write.txt");
     QString canonicalLocalPath = QFileInfo(localPath).canonicalFilePath() + "/";
     QDir localDir(localPath);
     if (!localDir.exists()) {
@@ -161,7 +161,7 @@ static QStringList getUiLanguages(const QString &modelPath)
 
 static QString modelSettingName(const ModelInfo &info, auto &&name)
 {
-    return u"model-%1/%2"_s.arg(info.id(), name);
+    return QString("model-%1/%2").arg(info.id(), name);
 }
 
 class MyPrivateSettings: public MySettings { };
@@ -195,13 +195,12 @@ void MySettings::onModelInfoChanged(const QModelIndex &topLeft, const QModelInde
 
     auto &modelList = dynamic_cast<const ModelList &>(*QObject::sender());
     for (int row = topLeft.row(); row <= bottomRight.row(); row++) {
-        using enum ModelList::Roles;
         using namespace ModelSettingsKey;
         auto index = topLeft.siblingAtRow(row);
-        if (auto info = modelList.modelInfo(index.data(IdRole).toString()); !info.id().isNull()) {
-            if (settingChanged(info, ChatTemplateRole, ChatTemplate))
+        if (auto info = modelList.modelInfo(index.data(ModelList::Roles::IdRole).toString()); !info.id().isNull()) {
+            if (settingChanged(info, ModelList::Roles::ChatTemplateRole, ChatTemplate))
                 emit chatTemplateChanged(info, /*fromInfo*/ true);
-            if (settingChanged(info, SystemMessageRole, SystemMessage))
+            if (settingChanged(info, ModelList::Roles::SystemMessageRole, SystemMessage))
                 emit systemMessageChanged(info, /*fromInfo*/ true);
         }
     }
@@ -218,7 +217,7 @@ void MySettings::setBasicSetting(const QString &name, const QVariant &value, std
         return;
 
     m_settings.setValue(name, value);
-    QMetaObject::invokeMethod(this, u"%1Changed"_s.arg(signal.value_or(name)).toLatin1().constData());
+    QMetaObject::invokeMethod(this, QString("%1Changed").arg(signal.value_or(name)).toLatin1().constData());
 }
 
 int MySettings::getEnumSetting(const QString &setting, const QStringList &valueNames) const
@@ -274,12 +273,12 @@ void MySettings::restoreLocalDocsDefaults()
 
 void MySettings::eraseModel(const ModelInfo &info)
 {
-    m_settings.remove(u"model-%1"_s.arg(info.id()));
+    m_settings.remove(QString("model-%1").arg(info.id()));
 }
 
 QString MySettings::modelName(const ModelInfo &info) const
 {
-    return m_settings.value(u"model-%1/name"_s.arg(info.id()),
+    return m_settings.value(QString("model-%1/name").arg(info.id()),
         !info.m_name.isEmpty() ? info.m_name : info.m_filename).toString();
 }
 
@@ -289,44 +288,44 @@ void MySettings::setModelName(const ModelInfo &info, const QString &value, bool 
         return;
 
     if ((info.m_name == value || info.m_filename == value) && !info.shouldSaveMetadata())
-        m_settings.remove(u"model-%1/name"_s.arg(info.id()));
+        m_settings.remove(QString("model-%1/name").arg(info.id()));
     else
-        m_settings.setValue(u"model-%1/name"_s.arg(info.id()), value);
+        m_settings.setValue(QString("model-%1/name").arg(info.id()), value);
     if (!force)
         emit nameChanged(info);
 }
 
-QVariant MySettings::getModelSetting(QLatin1StringView name, const ModelInfo &info) const
+QVariant MySettings::getModelSetting(QLatin1String name, const ModelInfo &info) const
 {
-    QLatin1StringView nameL1(name);
+    QLatin1String nameL1(name);
     return m_settings.value(modelSettingName(info, nameL1), info.getField(nameL1));
 }
 
 QVariant MySettings::getModelSetting(const char *name, const ModelInfo &info) const
 {
-    return getModelSetting(QLatin1StringView(name), info);
+    return getModelSetting(QLatin1String(name), info);
 }
 
-void MySettings::setModelSetting(QLatin1StringView name, const ModelInfo &info, const QVariant &value, bool force,
+void MySettings::setModelSetting(QLatin1String name, const ModelInfo &info, const QVariant &value, bool force,
                                  bool signal)
 {
     if (!force && (info.id().isEmpty() || getModelSetting(name, info) == value))
         return;
 
-    QLatin1StringView nameL1(name);
+    QLatin1String nameL1(name);
     QString settingName = modelSettingName(info, nameL1);
     if (info.getField(nameL1) == value && !info.shouldSaveMetadata())
         m_settings.remove(settingName);
     else
         m_settings.setValue(settingName, value);
     if (signal && !force)
-        QMetaObject::invokeMethod(this, u"%1Changed"_s.arg(nameL1).toLatin1().constData(), Q_ARG(ModelInfo, info));
+        QMetaObject::invokeMethod(this, QString("%1Changed").arg(nameL1).toLatin1().constData(), Q_ARG(ModelInfo, info));
 }
 
 void MySettings::setModelSetting(const char *name, const ModelInfo &info, const QVariant &value, bool force,
                                  bool signal)
 {
-    setModelSetting(QLatin1StringView(name), info, value, force, signal);
+    setModelSetting(QLatin1String(name), info, value, force, signal);
 }
 
 QString   MySettings::modelFilename               (const ModelInfo &info) const { return getModelSetting("filename",                info).toString(); }
@@ -353,7 +352,7 @@ QString   MySettings::modelChatNamePrompt         (const ModelInfo &info) const 
 QString   MySettings::modelSuggestedFollowUpPrompt(const ModelInfo &info) const { return getModelSetting("suggestedFollowUpPrompt", info).toString(); }
 
 auto MySettings::getUpgradeableModelSetting(
-    const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+    const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
 ) const -> UpgradeableSetting
 {
     if (info.id().isEmpty()) {
@@ -372,7 +371,7 @@ auto MySettings::getUpgradeableModelSetting(
 }
 
 bool MySettings::isUpgradeableModelSettingSet(
-    const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+    const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
 ) const
 {
     if (info.id().isEmpty()) {
@@ -512,7 +511,7 @@ void MySettings::setModelRepeatPenaltyTokens(const ModelInfo &info, int value, b
 }
 
 bool MySettings::setUpgradeableModelSetting(
-    const ModelInfo &info, const QString &value, QLatin1StringView legacyKey, QLatin1StringView newKey
+    const ModelInfo &info, const QString &value, QLatin1String legacyKey, QLatin1String newKey
 ) {
     if (info.id().isEmpty()) {
         qWarning("%s: got null model", Q_FUNC_INFO);
@@ -535,7 +534,7 @@ bool MySettings::setUpgradeableModelSetting(
 }
 
 bool MySettings::resetUpgradeableModelSetting(
-    const ModelInfo &info, QLatin1StringView legacyKey, QLatin1StringView newKey
+    const ModelInfo &info, QLatin1String legacyKey, QLatin1String newKey
 ) {
     if (info.id().isEmpty()) {
         qWarning("%s: got null model", Q_FUNC_INFO);
@@ -779,18 +778,18 @@ QString MySettings::filePathForLocale(const QLocale &locale)
     // rather than having to recompile all of GPT4All
     QString directory = modelPath();
     for (const QString &bcp47Name : uiLanguages) {
-        QString filePath = u"%1/gpt4all_%2.qm"_s.arg(directory, bcp47Name);
+        QString filePath = QString("%1/gpt4all_%2.qm").arg(directory, bcp47Name);
         QFileInfo filePathInfo(filePath);
         if (filePathInfo.exists()) return filePath;
     }
 
     // Now scan the internal built-in translations
     for (QString bcp47Name : uiLanguages) {
-        QString filePath = u":/i18n/gpt4all_%1.qm"_s.arg(bcp47Name);
+        QString filePath = QString(":/i18n/gpt4all_%1.qm").arg(bcp47Name);
         QFileInfo filePathInfo(filePath);
         if (filePathInfo.exists()) return filePath;
     }
-    return u":/i18n/gpt4all_en_US.qm"_s;
+    return QString(":/i18n/gpt4all_en_US.qm");
 }
 
 void MySettings::setLanguageAndLocale(const QString &bcp47Name)
