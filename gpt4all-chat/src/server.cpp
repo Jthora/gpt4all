@@ -1,5 +1,5 @@
-// Qt 6.2 compatibility stub implementation for server.cpp
-// QHttpServer not available in Qt 6.2, so HTTP server functionality is disabled
+// Qt 6.2 compatibility implementation using SimpleTcpServer instead of QHttpServer
+// Provides OpenAI-compatible API server functionality
 
 #include "server.h"
 #include "chat.h"
@@ -8,9 +8,12 @@
 #include "database.h"
 #include "localdocs.h"
 #include "mysettings.h"
+#include "simpleserver.h"
 
 #include <QDebug>
 #include <QJsonObject>
+#include <QHostAddress>
+#include <QTimer>
 
 // Stub classes for request types
 class CompletionRequest {
@@ -27,18 +30,32 @@ Server::Server(Chat *chat)
     : ChatLLM(chat, true /* is server */)
     , m_chat(chat)
 {
-    // Qt 6.2 compatibility - QHttpServer not available
-    qDebug() << "Server created but HTTP functionality disabled (Qt 6.2 compatibility)";
+    // Initialize SimpleServer instead of QHttpServer
+    m_httpServer = new SimpleServer();
+    m_httpServer->setChatLLM(this);
+    
+    qDebug() << "Server created with SimpleServer support";
     
     connect(this, &Server::threadStarted, this, &Server::start);
-    
-    // Qt 6.2 compatibility - database connections disabled since HTTP server is not functional
 }
 
 void Server::start()
 {
-    // Qt 6.2 compatibility - QHttpServer not available, HTTP server functionality disabled
-    qDebug() << "Server::start() - HTTP server functionality not available in Qt 6.2";
+    // Check if server is enabled in settings
+    if (!MySettings::globalInstance()->serverChat()) {
+        qDebug() << "Server::start() - API server is disabled in settings";
+        return;
+    }
+    
+    // Start the SimpleServer on the configured port
+    int port = MySettings::globalInstance()->networkPort();
+    
+    bool success = m_httpServer->startServer(port);
+    if (success) {
+        qDebug() << "Server::start() - HTTP server started successfully on port" << port;
+    } else {
+        qWarning() << "Server::start() - Failed to start HTTP server on port" << port;
+    }
 
     connect(this, &Server::requestResetResponseState, m_chat, &Chat::resetResponseState, Qt::BlockingQueuedConnection);
 }

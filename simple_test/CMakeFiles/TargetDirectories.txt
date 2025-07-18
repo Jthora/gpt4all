@@ -1,0 +1,8 @@
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/test_simpleserver.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/gpt4all_server.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/edit_cache.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/rebuild_cache.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/test_simpleserver_autogen_timestamp_deps.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/test_simpleserver_autogen.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/gpt4all_server_autogen_timestamp_deps.dir
+/media/jono/nvme/projects/gpt4all/simple_test/CMakeFiles/gpt4all_server_autogen.dir

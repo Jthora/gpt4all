@@ -1,0 +1,12 @@
+{
+  "name": "gpt4all-api-test",
+  "version": "1.0.0",
+  "description": "Node.js integration tests for MinimalSimpleServer",
+  "main": "test_node_integration.js",
+  "scripts": {
+    "test": "node test_node_integration.js"
+  },
+  "dependencies": {
+    "node-fetch": "^2.6.0"
+  }
+}

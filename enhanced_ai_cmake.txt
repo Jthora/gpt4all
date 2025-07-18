@@ -1,0 +1,80 @@
+# =============================================================================
+# ENHANCED AI SERVER CMAKE CONFIGURATION
+# Build configuration for complete AI-integrated HTTP server
+# =============================================================================
+
+cmake_minimum_required(VERSION 3.16)
+project(enhanced_ai_server)
+
+# Find Qt6 components
+find_package(Qt6 REQUIRED COMPONENTS Core Network Sql)
+
+# Include GPT4All chat sources
+set(GPT4ALL_CHAT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat/src")
+
+# Enhanced AI Server sources
+set(ENHANCED_AI_SOURCES
+    enhanced_ai_server.h
+    enhanced_ai_server.cpp
+    enhanced_ai_server_app.cpp
+)
+
+# GPT4All dependencies (key components needed)
+set(GPT4ALL_CORE_SOURCES
+    ${GPT4ALL_CHAT_DIR}/chatllm.h
+    ${GPT4ALL_CHAT_DIR}/chatllm.cpp
+    ${GPT4ALL_CHAT_DIR}/chatmodel.h
+    ${GPT4ALL_CHAT_DIR}/chatmodel.cpp
+    ${GPT4ALL_CHAT_DIR}/chat.h
+    ${GPT4ALL_CHAT_DIR}/chat.cpp
+    ${GPT4ALL_CHAT_DIR}/modellist.h
+    ${GPT4ALL_CHAT_DIR}/modellist.cpp
+    ${GPT4ALL_CHAT_DIR}/database.h
+    ${GPT4ALL_CHAT_DIR}/database.cpp
+    ${GPT4ALL_CHAT_DIR}/mysettings.h
+    ${GPT4ALL_CHAT_DIR}/mysettings.cpp
+)
+
+# Create executable
+add_executable(enhanced_ai_server 
+    ${ENHANCED_AI_SOURCES}
+    ${GPT4ALL_CORE_SOURCES}
+)
+
+# Include directories
+target_include_directories(enhanced_ai_server PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${GPT4ALL_CHAT_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-backend
+)
+
+# Link Qt libraries
+target_link_libraries(enhanced_ai_server 
+    Qt6::Core 
+    Qt6::Network 
+    Qt6::Sql
+)
+
+# Compiler definitions
+target_compile_definitions(enhanced_ai_server PRIVATE
+    QT_NO_DEBUG_OUTPUT
+)
+
+# Install target
+install(TARGETS enhanced_ai_server
+    RUNTIME DESTINATION bin
+)
+
+# =============================================================================
+# USAGE INSTRUCTIONS
+# =============================================================================
+# 
+# To build and run:
+#   mkdir enhanced_build
+#   cd enhanced_build
+#   cmake ..
+#   make
+#   ./enhanced_ai_server
+#
+# The server will start on http://localhost:4891 with REAL AI integration!
+# =============================================================================

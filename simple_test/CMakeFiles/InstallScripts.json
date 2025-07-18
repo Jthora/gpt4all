@@ -1,0 +1,7 @@
+{
+	"InstallScripts" : 
+	[
+		"/media/jono/nvme/projects/gpt4all/simple_test/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

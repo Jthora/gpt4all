@@ -50,7 +50,7 @@ if (GPT4ALL_GEN_CPACK_CONFIG)
 endif()
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (MSVC)
     # Enable accurate __cplusplus macro
@@ -81,7 +81,7 @@ function(check_cpp_feature FEATURE_NAME MIN_VALUE)
 endfunction()
 
 # check for monadic operations in std::optional (e.g. transform)
-check_cpp_feature("__cpp_lib_optional" "202110L")
+# check_cpp_feature("__cpp_lib_optional" "202110L")
 
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/Modules")
@@ -93,7 +93,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 set(CMAKE_FIND_PACKAGE_TARGETS_GLOBAL ON)
-set(GPT4ALL_QT_COMPONENTS Core Quick QuickDialogs2 Sql Svg)
+set(GPT4ALL_QT_COMPONENTS Core Quick QuickDialogs2 Sql Svg Network)
 set(GPT4ALL_USING_QTPDF OFF)
 if (CMAKE_SYSTEM_NAME MATCHES Windows AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|AARCH64|arm64|ARM64)$")
     # QtPDF is not available.
@@ -249,6 +249,7 @@ qt_add_executable(chat
     src/mysettings.cpp            src/mysettings.h
     src/network.cpp               src/network.h
     src/server.cpp                src/server.h
+    src/simpleserver.cpp       src/simpleserver.h
     src/tool.cpp                  src/tool.h
     src/toolcallparser.cpp        src/toolcallparser.h
     src/toolmodel.cpp             src/toolmodel.h
