@@ -77,17 +77,15 @@ static const QVariantMap basicDefaults {
 
 static QString defaultLocalModelsPath()
 {
-    // Use faster NVMe storage for models instead of slower OS drive
-    QString localPath = "/media/jono/nvme/models/gpt4all/";
+    QString localPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation)
+        + "/";
     QString testWritePath = localPath + QString("test_write.txt");
     QString canonicalLocalPath = QFileInfo(localPath).canonicalFilePath() + "/";
     QDir localDir(localPath);
     if (!localDir.exists()) {
         if (!localDir.mkpath(localPath)) {
             qWarning() << "ERROR: Local download directory can't be created:" << canonicalLocalPath;
-            // Fallback to original path if NVMe path fails
-            QString fallbackPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/";
-            return QFileInfo(fallbackPath).canonicalFilePath() + "/";
+            return canonicalLocalPath;
         }
     }
 
@@ -100,11 +98,8 @@ static QString defaultLocalModelsPath()
         return canonicalLocalPath;
     }
 
-    qWarning() << "ERROR: NVMe download path appears not writeable:" << canonicalLocalPath;
-    qWarning() << "Falling back to OS drive path";
-    // Fallback to original path if NVMe path is not writable
-    QString fallbackPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/";
-    return QFileInfo(fallbackPath).canonicalFilePath() + "/";
+    qWarning() << "ERROR: Local download path appears not writeable:" << canonicalLocalPath;
+    return canonicalLocalPath;
 }
 
 static QStringList getDevices(bool skipKompute = false)

@@ -33,7 +33,7 @@ public:
     explicit SimpleServer();
     ~SimpleServer();
 
-    void setChatLLM(ChatLLM *chatLLM) { m_chatLLM = chatLLM; }
+    void setChatLLM(ChatLLM *chatLLM);
     bool startServer(quint16 port = 4891);
     void stopServer();
     bool isListening() const;
@@ -48,6 +48,9 @@ private:
     HttpRequest parseHttpRequest(const QByteArray &data);
     QByteArray createHttpResponse(const HttpResponse &response);
     HttpResponse handleRequest(const HttpRequest &request);
+    
+    // AI Integration
+    QString generateAIResponse(const QString &userPrompt);
     
     // API handlers
     HttpResponse handleHealth(const HttpRequest &request);

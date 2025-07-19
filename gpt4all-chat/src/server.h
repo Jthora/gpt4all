@@ -4,7 +4,7 @@
 #include "chatllm.h"
 #include "database.h"
 
-// Qt 6.2 compatibility - Using QTcpHttpServer instead of QHttpServer
+// Qt 6.2 compatibility - QHttpServer not available, create stub implementation
 #include <QJsonObject>
 #include <QList>
 #include <QObject> // IWYU pragma: keep
@@ -17,7 +17,6 @@
 class Chat;
 class ChatRequest;
 class CompletionRequest;
-class SimpleServer;
 
 // Qt 6.2 compatibility stub for QHttpServerResponse
 struct HttpServerResponse {
@@ -52,7 +51,7 @@ private Q_SLOTS:
 
 private:
     Chat *m_chat;
-    SimpleServer *m_httpServer; // SimpleServer-based implementation for Qt 6.2 compatibility
+    // QHttpServer not available in Qt 6.2, HTTP server functionality disabled
     QList<ResultInfo> m_databaseResults;
     QList<QString> m_collections;
 };

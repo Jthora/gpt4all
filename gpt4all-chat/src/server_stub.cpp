@@ -1,5 +1,6 @@
-// Qt 6.2 compatibility stub implementation for server.cpp
-// QHttpServer not available in Qt 6.2, so HTTP server functionality is disabled
+// Qt 6.2 compatibility server stub implementation
+// This provides a minimal, stable implementation that doesn't crash
+// For real HTTP server functionality, use our enhanced_ai_server implementations
 
 #include "server.h"
 #include "chat.h"
@@ -66,21 +67,19 @@ void Server::start()
 auto Server::handleCompletionRequest(const CompletionRequest &request) -> std::pair<HttpServerResponse, std::optional<QJsonObject>>
 {
     Q_UNUSED(request);
-    // Qt 6.2 compatibility - return helpful stub response
+    // Qt 6.2 compatibility - return safe stub response
     QJsonObject error;
     error["error"] = "HTTP server functionality not available in Qt 6.2";
     error["message"] = "Use enhanced_ai_server_fixed or minimal_simpleserver for HTTP API";
-    error["alternatives"] = "Run ./enhanced_ai_server_fixed for real AI integration";
     return { HttpServerResponse(503), error };
 }
 
 auto Server::handleChatRequest(const ChatRequest &request) -> std::pair<HttpServerResponse, std::optional<QJsonObject>>
 {
     Q_UNUSED(request);
-    // Qt 6.2 compatibility - return helpful stub response  
+    // Qt 6.2 compatibility - return safe stub response  
     QJsonObject error;
     error["error"] = "HTTP server functionality not available in Qt 6.2";
     error["message"] = "Use enhanced_ai_server_fixed or minimal_simpleserver for HTTP API";
-    error["alternatives"] = "Run ./enhanced_ai_server_fixed for real AI integration";
     return { HttpServerResponse(503), error };
 }

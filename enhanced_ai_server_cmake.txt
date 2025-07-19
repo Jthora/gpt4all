@@ -1,0 +1,83 @@
+# Enhanced AI Server CMake Build Configuration
+# This builds the complete enhanced AI server with real GPT4All integration
+
+cmake_minimum_required(VERSION 3.16)
+project(EnhancedAIServer)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find Qt6 components
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Network)
+
+# Enable MOC for Q_OBJECT
+qt6_standard_project_setup()
+
+# GPT4All Chat includes
+set(GPT4ALL_CHAT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat)
+set(GPT4ALL_BACKEND_DIR ${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-backend)
+
+# Enhanced AI Server executable
+add_executable(enhanced_ai_server_fixed
+    enhanced_ai_server_app.cpp
+    enhanced_ai_server.cpp
+    ${GPT4ALL_CHAT_DIR}/src/chatllm.cpp
+    ${GPT4ALL_CHAT_DIR}/src/chatmodel.cpp
+    ${GPT4ALL_CHAT_DIR}/src/chat.cpp
+    ${GPT4ALL_CHAT_DIR}/src/modellist.cpp
+    ${GPT4ALL_CHAT_DIR}/src/database.cpp
+    ${GPT4ALL_CHAT_DIR}/src/mysettings.cpp
+    ${GPT4ALL_CHAT_DIR}/src/localdocs.cpp
+    ${GPT4ALL_CHAT_DIR}/src/chatapi.cpp
+    ${GPT4ALL_CHAT_DIR}/src/logger.cpp
+    ${GPT4ALL_CHAT_DIR}/src/config.cpp
+    ${GPT4ALL_CHAT_DIR}/src/translator.cpp
+    ${GPT4ALL_CHAT_DIR}/src/embllm.cpp
+    ${GPT4ALL_CHAT_DIR}/src/network.cpp
+    ${GPT4ALL_CHAT_DIR}/src/download.cpp
+    ${GPT4ALL_CHAT_DIR}/src/modelinfo.cpp
+    ${GPT4ALL_CHAT_DIR}/src/localdocsmodel.cpp
+    ${GPT4ALL_CHAT_DIR}/src/serialization.cpp
+    ${GPT4ALL_CHAT_DIR}/src/gpt4allchat.cpp
+)
+
+# Link Qt6 libraries
+target_link_libraries(enhanced_ai_server_fixed 
+    Qt6::Core 
+    Qt6::Widgets 
+    Qt6::Network
+)
+
+# Include directories
+target_include_directories(enhanced_ai_server_fixed PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${GPT4ALL_CHAT_DIR}/src
+    ${GPT4ALL_BACKEND_DIR}
+    ${GPT4ALL_CHAT_DIR}/deps
+)
+
+# GPT4All backend library
+find_library(GPT4ALL_BACKEND_LIB
+    NAMES gpt4all-backend
+    PATHS ${GPT4ALL_BACKEND_DIR}
+    PATH_SUFFIXES lib
+)
+
+if(GPT4ALL_BACKEND_LIB)
+    target_link_libraries(enhanced_ai_server_fixed ${GPT4ALL_BACKEND_LIB})
+endif()
+
+# Compiler definitions
+target_compile_definitions(enhanced_ai_server_fixed PRIVATE
+    QT_NO_KEYWORDS
+    GPT4ALL_CHAT
+)
+
+# Copy to bin directory
+set_target_properties(enhanced_ai_server_fixed PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat/build/bin
+)
+
+message(STATUS "Enhanced AI Server build configuration complete")
+message(STATUS "Target: enhanced_ai_server_fixed")
+message(STATUS "Output: ${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat/build/bin")
