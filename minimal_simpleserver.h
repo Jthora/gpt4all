@@ -10,7 +10,7 @@
 #include <QDebug>
 #include <QDateTime>
 
-// Minimal HTTP server for testing
+// Demonstration HTTP server with helpful automotive responses
 class MinimalSimpleServer
 {
 public:

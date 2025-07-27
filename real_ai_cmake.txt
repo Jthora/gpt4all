@@ -1,0 +1,65 @@
+cmake_minimum_required(VERSION 3.16)
+
+project(RealAIServer)
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find required Qt packages
+find_package(Qt6 REQUIRED COMPONENTS Core Network)
+
+# Enable Qt MOC
+set(CMAKE_AUTOMOC ON)
+
+# Add GPT4All chat source directory to include path
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-backend/deps/llama.cpp-mainline/src)
+
+# Find GPT4All libraries
+find_library(LLMODEL_LIB llmodel PATHS ${CMAKE_CURRENT_SOURCE_DIR}/build/bin)
+
+if(NOT LLMODEL_LIB)
+    message(FATAL_ERROR "Could not find llmodel library")
+endif()
+
+message(STATUS "Found llmodel library: ${LLMODEL_LIB}")
+
+# Source files
+set(SOURCES
+    real_ai_server_main.cpp
+    minimal_simpleserver.cpp
+    gpt4all-chat/src/chat.cpp
+    gpt4all-chat/src/chatllm.cpp
+    gpt4all-chat/src/chatmodel.cpp
+    gpt4all-chat/src/database.cpp
+    gpt4all-chat/src/localdocs.cpp
+    gpt4all-chat/src/modellist.cpp
+    gpt4all-chat/src/mysettings.cpp
+    gpt4all-chat/src/network.cpp
+)
+
+# Headers
+set(HEADERS
+    minimal_simpleserver.h
+    gpt4all-chat/src/chat.h
+    gpt4all-chat/src/chatllm.h
+    gpt4all-chat/src/chatmodel.h
+)
+
+# Create the executable
+add_executable(real_ai_server ${SOURCES} ${HEADERS})
+
+# Link Qt libraries and GPT4All
+target_link_libraries(real_ai_server
+    Qt6::Core
+    Qt6::Network
+    ${LLMODEL_LIB}
+)
+
+# Set output directory
+set_target_properties(real_ai_server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/build_real_ai_server
+)
+
+message(STATUS "✅ Real AI Server configured - will link against real GPT4All components")

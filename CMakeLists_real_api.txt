@@ -1,0 +1,91 @@
+cmake_minimum_required(VERSION 3.16)
+project(RealGPT4AllAPIServer VERSION 1.0.0 LANGUAGES CXX)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Find Qt6 components
+find_package(Qt6 REQUIRED COMPONENTS Core Network)
+
+# Add the GPT4All source directory
+set(GPT4ALL_CHAT_SRC "${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-chat/src")
+set(GPT4ALL_BACKEND_SRC "${CMAKE_CURRENT_SOURCE_DIR}/gpt4all-backend")
+
+# Include directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${GPT4ALL_CHAT_SRC})
+include_directories(${GPT4ALL_BACKEND_SRC})
+
+# Add third-party dependencies that GPT4All needs
+find_package(PkgConfig REQUIRED)
+
+# Try to find required libraries
+find_library(GPT4ALL_BACKEND_LIB NAMES gpt4all-backend PATHS ${GPT4ALL_BACKEND_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/build)
+
+# Collect GPT4All source files we need
+set(GPT4ALL_SOURCES
+    ${GPT4ALL_CHAT_SRC}/chat.cpp
+    ${GPT4ALL_CHAT_SRC}/chatllm.cpp
+    ${GPT4ALL_CHAT_SRC}/chatmodel.cpp
+    ${GPT4ALL_CHAT_SRC}/chatapi.cpp
+    ${GPT4ALL_CHAT_SRC}/database.cpp
+    ${GPT4ALL_CHAT_SRC}/download.cpp
+    ${GPT4ALL_CHAT_SRC}/llm.cpp
+    ${GPT4ALL_CHAT_SRC}/localdocs.cpp
+    ${GPT4ALL_CHAT_SRC}/localdocsmodel.cpp
+    ${GPT4ALL_CHAT_SRC}/modellist.cpp
+    ${GPT4ALL_CHAT_SRC}/mysettings.cpp
+    ${GPT4ALL_CHAT_SRC}/network.cpp
+    ${GPT4ALL_CHAT_SRC}/tool.cpp
+    ${GPT4ALL_CHAT_SRC}/toolmodel.cpp
+    ${GPT4ALL_CHAT_SRC}/toolcallparser.cpp
+    ${GPT4ALL_CHAT_SRC}/utils.inl
+    ${GPT4ALL_CHAT_SRC}/jinja_helpers.cpp
+    ${GPT4ALL_CHAT_SRC}/jinja_replacements.cpp
+)
+
+# Create executable
+add_executable(real_gpt4all_api_server
+    real_gpt4all_api_server.cpp
+    ${GPT4ALL_SOURCES}
+)
+
+# Link Qt6 libraries
+target_link_libraries(real_gpt4all_api_server
+    Qt6::Core
+    Qt6::Network
+)
+
+# Try to link GPT4All backend if found
+if(GPT4ALL_BACKEND_LIB)
+    target_link_libraries(real_gpt4all_api_server ${GPT4ALL_BACKEND_LIB})
+    message(STATUS "Found GPT4All backend library: ${GPT4ALL_BACKEND_LIB}")
+else()
+    message(WARNING "GPT4All backend library not found. Server may not work properly.")
+endif()
+
+# Compiler definitions
+target_compile_definitions(real_gpt4all_api_server PRIVATE
+    QT_NO_KEYWORDS
+    CMAKE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+)
+
+# Add compiler flags for better compatibility
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(real_gpt4all_api_server PRIVATE
+        -Wall
+        -Wextra
+        -Wno-unused-parameter
+        -Wno-missing-field-initializers
+    )
+endif()
+
+# Set output directory
+set_target_properties(real_gpt4all_api_server PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+)
+
+message(STATUS "Configured Real GPT4All API Server")
+message(STATUS "  Qt6 version: ${Qt6_VERSION}")
+message(STATUS "  Source directory: ${CMAKE_CURRENT_SOURCE_DIR}")
+message(STATUS "  Binary directory: ${CMAKE_BINARY_DIR}")

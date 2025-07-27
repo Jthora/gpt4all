@@ -189,3 +189,35 @@ cmake-build-*
 
 # LLM models
 *.gguf
+
+# Build artifacts
+*.o
+*.moc
+*.so
+*.so.*
+*.a
+*_autogen/
+*.autogen
+.qmake.stash
+
+# Build directories
+build*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Executables (except scripts)
+real_gpt4all_server_microhttpd
+enhanced_ai_agent_server
+simple_gpt4all_demo
+real_gpt4all_server_hardened
+
+# IDE files
+.vscode/
+*.pro.user
+
+# Temporary files
+*.tmp
+*.bak
+*~
