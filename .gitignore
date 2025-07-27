@@ -16,6 +16,33 @@ __pycache__/
 # C extensions
 *.so
 
+# CMake build artifacts
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CPackConfig.cmake
+compile_commands.json
+*_autogen/
+*.moc
+install_manifest.txt
+
+# Object files and executables
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+gpt4all_server
+test_simpleserver
+simple_test/gpt4all_server
+simple_test/test_simpleserver
+
+# Qt build artifacts
+*_qmltyperegistrations.cpp
+moc_*.cpp
+*.qm
+
 # Distribution / packaging
 .Python
 build/
@@ -195,29 +222,32 @@ cmake-build-*
 *.moc
 *.so
 *.so.*
-*.a
-*_autogen/
-*.autogen
-.qmake.stash
 
-# Build directories
+# Project-specific build directories and artifacts
+simple_test/CMakeCache.txt
+simple_test/CMakeFiles/
+simple_test/cmake_install.cmake
+simple_test/Makefile
+simple_test/gpt4all_server
+simple_test/test_simpleserver
+simple_test/*_autogen/
+
+# Additional build artifacts
 build*/
-CMakeFiles/
-CMakeCache.txt
-cmake_install.cmake
-Makefile
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/Makefile
+**/*_autogen/
 
-# Executables (except scripts)
-real_gpt4all_server_microhttpd
-enhanced_ai_agent_server
-simple_gpt4all_demo
-real_gpt4all_server_hardened
+# External dependencies
+fmt-*/
 
-# IDE files
-.vscode/
-*.pro.user
+# Desktop files (generated)
+*.desktop
 
-# Temporary files
+# Temporary and log files
+*.log
 *.tmp
-*.bak
-*~
+server.log
+test_server.log
